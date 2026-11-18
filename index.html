@@ -68,6 +68,14 @@
 
         <fieldset>
           <legend>Screen</legend>
+          <div class="choice" role="group" aria-label="Show">
+            <button type="button" id="view-keys">Keyboard</button>
+            <button type="button" id="view-bass">Bass neck</button>
+          </div>
+          <div class="choice" id="strings-row" role="group" aria-label="Bass strings" hidden>
+            <button type="button" id="strings-4">4 strings</button>
+            <button type="button" id="strings-5">5 strings</button>
+          </div>
           <div class="row">
             <button type="button" id="shift-down">◀ Notes left</button>
             <output id="shift-out"></output>
@@ -126,6 +134,7 @@
 
   <script src="js/midi.js"></script>
   <script src="js/layout.js"></script>
+  <script src="js/fretboard.js"></script>
   <script src="js/source.js"></script>
   <script src="js/stretch.js"></script>
   <script src="js/engine.js"></script>

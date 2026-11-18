@@ -1,14 +1,14 @@
 /* UI glue: song list, modes, transport, and the falling-notes picture. */
 (function () {
   "use strict";
-  var Midi = window.TprMidi, Layout = window.TprLayout, Source = window.TprSource, Stretch = window.TprStretch;
+  var Midi = window.TprMidi, Layout = window.TprLayout, Fret = window.TprFretboard, Source = window.TprSource, Stretch = window.TprStretch;
   var PREFS_KEY = "tpr_prefs_v1";
   var COLORS = { white: "#35d0c3", black: "#b48cff", folded: "#e0a030" };
 
   function $(id) { return document.getElementById(id); }
 
   var prefs = Object.assign({
-    latencyMs: 0, speedPct: 100, guide: true, guideVolume: 0.8, mixVolume: 0.9, look: 3, mode: "backing", song: null, shift: {}
+    latencyMs: 0, speedPct: 100, view: "keys", strings: 4, guide: true, guideVolume: 0.8, mixVolume: 0.9, look: 3, mode: "backing", song: null, shift: {}
   }, (function () { try { return JSON.parse(localStorage.getItem(PREFS_KEY)) || {}; } catch (_) { return {}; } })());
   function savePrefs() { try { localStorage.setItem(PREFS_KEY, JSON.stringify(prefs)); } catch (_) { /* private mode */ } }
 
@@ -189,9 +189,15 @@
   }
 
   function shiftOf() { return (song && prefs.shift[song.id]) || 0; }
+  var spots = [], frets = 12; // bass view: where each note is played, frets drawn
   function placeNotes() {
     if (!parsed) return;
     low = Math.max(Layout.FIRST, Math.min(100, Layout.pickLow(parsed.notes) - 12 * shiftOf()));
+    if (prefs.view === "bass") {
+      var shift = 12 * shiftOf();
+      spots = Fret.finger(parsed.notes.map(function (n) { return { midi: n.midi + shift, start: n.start }; }), prefs.strings);
+      frets = Fret.shownFrets(spots);
+    }
     $("shift-out").textContent = shiftOf() > 0 ? "+" + shiftOf() : String(shiftOf());
   }
 
@@ -299,6 +305,23 @@
     }
     $("shift-down").addEventListener("click", function () { moveNotes(-1); });
     $("shift-up").addEventListener("click", function () { moveNotes(1); });
+    function syncView() {
+      $("view-keys").setAttribute("aria-pressed", String(prefs.view !== "bass"));
+      $("view-bass").setAttribute("aria-pressed", String(prefs.view === "bass"));
+      $("strings-4").setAttribute("aria-pressed", String(prefs.strings !== 5));
+      $("strings-5").setAttribute("aria-pressed", String(prefs.strings === 5));
+      $("strings-row").hidden = prefs.view !== "bass";
+      canvas.setAttribute("aria-label", prefs.view === "bass" ? "Bass neck with the notes to play" : "Keyboard with the notes to play");
+    }
+    function setView(view, strings) {
+      prefs.view = view; if (strings) prefs.strings = strings;
+      savePrefs(); syncView(); placeNotes();
+    }
+    $("view-keys").addEventListener("click", function () { setView("keys"); });
+    $("view-bass").addEventListener("click", function () { setView("bass"); });
+    $("strings-4").addEventListener("click", function () { setView("bass", 4); });
+    $("strings-5").addEventListener("click", function () { setView("bass", 5); });
+    syncView();
     document.addEventListener("fullscreenchange", function () {
       $("fullscreen").textContent = document.fullscreenElement ? "Exit full screen" : "Full screen";
     });
@@ -407,6 +430,7 @@
     requestAnimationFrame(draw);
     if (!width) return;
     g.clearRect(0, 0, width, height);
+    if (prefs.view === "bass") { drawBass(); return; }
     var keyboardHeight = Math.min(Math.max(height * 0.36, 152), height * 0.48, 280), fall = height - keyboardHeight;
     var t = engine.isPlaying() ? engine.visualPosition(prefs.latencyMs / 1000) : engine.position();
     var look = prefs.look * engine.speed(), scale = fall / look; // same fall speed at any speed: slowed notes grow taller
@@ -464,13 +488,118 @@
       });
     });
 
+    showTime();
+  }
+  function showTime() {
     if (!seeking) $("seek").value = String(engine.position());
     $("time").textContent = clock(engine.position()) + " / " + clock(engine.duration());
+  }
+
+  /* Bass view: one column per fret (the first for open strings), notes fall
+   * into their fret's column in their string's colour, with the fret number
+   * on them; the neck below lights the string and fret to press. */
+  var STRING_COLORS = { B: "#8fa3b8", E: "#b48cff", A: "#35d0c3", D: "#f0b545", G: "#ff7aa8" };
+  function drawBass() {
+    var neckHeight = Math.min(Math.max(height * 0.36, 152), height * 0.48, 280), fall = height - neckHeight;
+    var t = engine.isPlaying() ? engine.visualPosition(prefs.latencyMs / 1000) : engine.position();
+    var look = prefs.look * engine.speed(), scale = fall / look;
+    var col = width / (frets + 1), names = Fret.stringNames(prefs.strings), count = names.length;
+    var numbers = Math.min(22, neckHeight * 0.14), top = fall + 6, bottom = height - numbers - 4;
+    var gapY = (bottom - top) / count;
+    function cx(fret) { return (fret + 0.5) * col; }
+    // low string at the top, as the player sees the neck looking down at it
+    function sy(string) { return top + gapY * (count - 1 - string + 0.5); }
+    var lit = {};
+
+    // lanes: a faint line per fret, stronger at the nut
+    for (var f = 1; f <= frets; f++) {
+      g.fillStyle = f === 1 ? "rgba(255,255,255,0.16)" : "rgba(255,255,255,0.05)";
+      g.fillRect(f * col - 1, 0, f === 1 ? 3 : 1, fall);
+    }
+    if (parsed) {
+      parsed.beats.forEach(function (beat) {
+        if (beat.time < t || beat.time > t + look) return;
+        var y = fall - (beat.time - t) * scale;
+        g.fillStyle = beat.bar ? "rgba(255,255,255,0.22)" : "rgba(255,255,255,0.07)";
+        g.fillRect(0, y, width, beat.bar ? 2 : 1);
+      });
+      var font = Math.round(Math.min(col * 0.42, 22));
+      g.textAlign = "center"; g.textBaseline = "middle";
+      for (var i = 0; i < parsed.notes.length; i++) {
+        var note = parsed.notes[i], spot = spots[i];
+        if (note.start > t + look) break;
+        if (note.end <= t || !spot) continue;
+        var color = STRING_COLORS[names[spot.string]];
+        var y1 = Math.min(fall, fall - (note.start - t) * scale);
+        var y0 = Math.max(-10, fall - (note.end - t) * scale) + 4;
+        if (y1 - y0 < 6) y0 = y1 - 6; // true length: stretching short notes would overlap the next one
+        var w = col * 0.74, x = cx(spot.fret) - w / 2;
+        g.fillStyle = color;
+        rounded(x, y0, w, y1 - y0, 8);
+        g.fill();
+        if (spot.folded) { g.setLineDash([5, 4]); g.strokeStyle = "#ffffff"; g.lineWidth = 2; g.stroke(); g.setLineDash([]); }
+        var size = Math.min(font, y1 - y0 - 4); // too short for a number: the neck shows it on arrival
+        if (size >= 10) {
+          g.fillStyle = "#0b0f13"; g.font = "700 " + Math.round(size) + "px system-ui, sans-serif";
+          g.fillText(String(spot.fret), cx(spot.fret), y1 - size / 2 - 2);
+        }
+        if (note.start <= t) lit[spot.string] = { fret: spot.fret, color: color, level: 0.78 + 0.22 * Math.exp(-(t - note.start) / 0.12) };
+      }
+    }
+
+    // hit line
+    g.fillStyle = "rgba(255,255,255,0.5)";
+    g.fillRect(0, fall - 2, width, 2);
+
+    // neck: wood, inlays, frets, nut, strings
+    g.fillStyle = "#2b2119";
+    g.fillRect(col, fall, width - col, bottom - fall + 4);
+    g.fillStyle = "#1a1612";
+    g.fillRect(0, fall, col, bottom - fall + 4);
+    var mid = (top + bottom) / 2;
+    g.fillStyle = "rgba(240,235,225,0.55)";
+    [3, 5, 7, 9, 15, 17, 19].forEach(function (f) {
+      if (f > frets) return;
+      g.beginPath(); g.arc(cx(f), mid, Math.min(col, gapY) * 0.14, 0, Math.PI * 2); g.fill();
+    });
+    if (frets >= 12) [mid - gapY, mid + gapY].forEach(function (y) {
+      g.beginPath(); g.arc(cx(12), y, Math.min(col, gapY) * 0.14, 0, Math.PI * 2); g.fill();
+    });
+    for (f = 1; f <= frets; f++) {
+      g.fillStyle = f === 1 ? "#e9e4d8" : "#9aa3ad";
+      g.fillRect(f * col - (f === 1 ? 3 : 1), fall, f === 1 ? 6 : 2, bottom - fall + 4);
+    }
+    for (var s = 0; s < count; s++) {
+      var y = sy(s), thick = 1.5 + (count - s) * 0.6; // low strings are thicker
+      g.fillStyle = "#d8dde3";
+      g.fillRect(col * 0.55, y - thick / 2, width - col * 0.55, thick);
+      // string name in its colour, in the open-string column
+      g.fillStyle = STRING_COLORS[names[s]];
+      g.font = "700 " + Math.round(Math.min(gapY * 0.55, col * 0.4, 22)) + "px system-ui, sans-serif";
+      g.textAlign = "center"; g.textBaseline = "middle";
+      g.fillText(names[s], col * 0.28, y);
+      var on = lit[s];
+      if (on) {
+        var r = Math.min(col, gapY) * 0.44;
+        g.globalAlpha = on.level; g.fillStyle = on.color;
+        if (on.fret === 0) g.fillRect(col, y - 3, width - col, 6); // open string: the whole string lights
+        g.beginPath(); g.arc(cx(on.fret), y, r, 0, Math.PI * 2); g.fill();
+        g.globalAlpha = 1;
+        g.fillStyle = "#0b0f13"; g.font = "700 " + Math.round(r * 1.1) + "px system-ui, sans-serif";
+        g.fillText(String(on.fret), cx(on.fret), y + 1);
+      }
+    }
+    // fret numbers under the neck
+    g.fillStyle = "#b5c0cd"; g.font = "600 " + Math.round(numbers * 0.75) + "px system-ui, sans-serif";
+    for (f = 0; f <= frets; f++) if (f === 0 || [3, 5, 7, 9, 12, 15, 17, 19].indexOf(f) >= 0) g.fillText(String(f), cx(f), bottom + 4 + numbers / 2);
+    showTime();
   }
 
   /* ---------- start ---------- */
   function start() {
     var found = Source.extractCode(location.href), linkError = null;
+    var asked = (/[#?&]v=(bass|keys)(?:&|$)/.exec(location.href || "") || [])[1];
+    if (asked) { prefs.view = asked; savePrefs(); } // a link can open straight on the bass neck
     if (found.code) {
       try { Source.writeConfig(Source.decodeLink(found.code)); } catch (error) { linkError = error.message; }
       history.replaceState(null, "", found.cleaned); // keep the token out of the address bar and history

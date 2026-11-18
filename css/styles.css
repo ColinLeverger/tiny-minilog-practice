@@ -95,6 +95,10 @@ output { min-width: 56px; color: var(--text); font-variant-numeric: tabular-nums
 .setup { border-top: 1px solid var(--line); padding-top: 4px; min-width: 0; }
 .setup summary { min-height: 48px; padding: 12px 0; color: var(--muted); cursor: pointer; }
 .setup[open] > fieldset { margin: 12px 0; }
+.choice { display: flex; gap: 6px; }
+.choice[hidden] { display: none; }
+.choice button { flex: 1; }
+.choice button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: #06201e; font-weight: 700; }
 .hint { margin: 0; color: var(--muted); font-size: 16px; }
 @media (orientation: portrait), (max-width: 800px) and (min-height: 451px) {
   header.bar { grid-template-columns: minmax(120px, 1fr) auto auto auto; }

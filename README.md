@@ -23,6 +23,15 @@ GitHub repository and are read with a read-only token carried in the link.
   "Preparing the slower recording…" shows, the song plays on at the previous
   speed; it then switches at the same point in the song. Slowed copies stay
   within 6 ms of the song's timing from the first bar to the last.
+- **Bass neck** (*Settings → Screen*): the same falling notes over a bass
+  neck instead of the keyboard. One column per fret (the first one is the
+  open string), notes in their string's colour with the fret number on them,
+  and the neck lights the string and fret to press. Low E is drawn at the top,
+  as the player sees the neck. 4 or 5 strings (low B), standard tuning. Each
+  note is placed where it is easiest to play: the app keeps the hand in one
+  four-fret position, uses open strings, prefers low frets and only moves the
+  hand when the line needs it. A link ending in `#v=bass` opens straight on
+  the neck (`#v=keys` for the keyboard).
 - **A / B / Loop off**: repeat a passage. **−5 s** and **Start** to go back.
 - **Settings**: volumes, moving the notes one octave left or right, how far
   ahead notes show, full screen, and timing (for Bluetooth headphones). Loading
@@ -118,6 +127,7 @@ way to check an export before pushing it.
 | File | Role |
 | --- | --- |
 | `js/midi.js` | MIDI file → notes in seconds (tempo map, beats). |
+| `js/fretboard.js` | Bass neck: tunings, and the easiest place to play each note. |
 | `js/layout.js` | The 25 keys, and where a note lands on them. |
 | `js/source.js` | Link code, GitHub reads, on-device cache keyed by content hash. |
 | `js/stretch.js` | Slows a recording down without changing its pitch. |

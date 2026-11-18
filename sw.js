@@ -10,6 +10,7 @@ var SHELL = [
   "css/styles.css",
   "js/midi.js",
   "js/layout.js",
+  "js/fretboard.js",
   "js/source.js",
   "js/stretch.js",
   "js/engine.js",
