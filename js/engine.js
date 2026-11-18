@@ -31,6 +31,29 @@
       return ctx;
     }
 
+    /* iOS plays Web Audio as "ambient" sound, which the ring/silent switch
+     * mutes. Declaring a playback session lifts that; on older iOS a looping
+     * silent <audio> element started in the same tap has the same effect. */
+    var keepAlive = null;
+    function unmute() {
+      try {
+        if (root.navigator && root.navigator.audioSession) { root.navigator.audioSession.type = "playback"; return; }
+      } catch (_) { /* fall through to the element */ }
+      if (!root.Audio || !root.Blob || !root.URL) return;
+      if (!keepAlive) {
+        var rate = 8000, bytes = new Uint8Array(44 + rate / 2), view = new DataView(bytes.buffer);
+        [0x52494646, 36 + rate / 2, 0x57415645, 0x666d7420].forEach(function (v, i) { view.setUint32(i * 4, v, i === 1); });
+        view.setUint32(16, 16, true); view.setUint16(20, 1, true); view.setUint16(22, 1, true);
+        view.setUint32(24, rate, true); view.setUint32(28, rate, true); view.setUint16(32, 1, true); view.setUint16(34, 8, true);
+        view.setUint32(36, 0x64617461); view.setUint32(40, rate / 2, true);
+        bytes.fill(128, 44); // 8-bit silence
+        keepAlive = new root.Audio(root.URL.createObjectURL(new root.Blob([bytes], { type: "audio/wav" })));
+        keepAlive.loop = true; keepAlive.setAttribute("playsinline", "");
+      }
+      var started = keepAlive.play();
+      if (started && started.catch) started.catch(function () { /* sound may stay muted by the switch */ });
+    }
+
     function duration() {
       var audio = buffer ? buffer.duration - bufferOffset : 0;
       return Math.max(midiDuration, audio, 0);
@@ -124,6 +147,7 @@
 
     async function play() {
       context();
+      unmute(); // must run inside the tap, before the first await
       if (ctx.state !== "running") await ctx.resume();
       if (playing) return;
       if (startPos >= duration()) startPos = 0;
@@ -137,6 +161,7 @@
       playing = false;
       root.clearInterval(timer);
       silence();
+      if (keepAlive) keepAlive.pause();
     }
     function seek(to) {
       to = Math.max(0, Math.min(to, duration()));
