@@ -18,6 +18,7 @@
     var playing = false, startCtx = 0, startPos = 0, cursor = 0, timer = null;
     var source = null, voices = [], loop = null;
     var guideOn = true, guideVolume = 0.8, mixVolume = 0.9;
+    var speed = 1; // song seconds per real second
 
     function context() {
       if (ctx) return ctx;
@@ -55,12 +56,12 @@
     }
 
     function duration() {
-      var audio = buffer ? buffer.duration - bufferOffset : 0;
+      var audio = buffer ? buffer.duration * speed - bufferOffset : 0;
       return Math.max(midiDuration, audio, 0);
     }
     function position() {
       if (!playing) return startPos;
-      return startPos + (ctx.currentTime - startCtx);
+      return startPos + (ctx.currentTime - startCtx) * speed;
     }
     function outputLatency() {
       if (!ctx) return 0;
@@ -113,11 +114,11 @@
     }
 
     function schedule() {
-      var pos = position(), horizon = pos + 0.3;
+      var pos = position(), horizon = pos + 0.3 * speed;
       while (cursor < notes.length && notes[cursor].start < horizon) {
         var note = notes[cursor++];
         var from = Math.max(note.start, pos);
-        if (note.end - from > 0.02) voice(note, startCtx + (from - startPos), note.end - from);
+        if (note.end - from > 0.02) voice(note, startCtx + (from - startPos) / speed, (note.end - from) / speed);
       }
     }
     function tick() {
@@ -138,7 +139,7 @@
       if (buffer) {
         source = ctx.createBufferSource();
         source.buffer = buffer; source.connect(mixGain);
-        var at = startPos + bufferOffset;
+        var at = (startPos + bufferOffset) / speed; // seconds into the (stretched) buffer
         if (at < 0) source.start(startCtx - at, 0);
         else if (at < buffer.duration) source.start(startCtx, at);
       }
@@ -174,16 +175,23 @@
     return {
       play: play, pause: pause, seek: seek, position: position, duration: duration,
       isPlaying: function () { return playing; },
+      speed: function () { return speed; },
       /* What the eye should see now: the sound leaving the speaker left the
        * clock `latency` ago. */
-      visualPosition: function (extraSeconds) { return position() - outputLatency() - (extraSeconds || 0); },
+      visualPosition: function (extraSeconds) { return position() - (outputLatency() + (extraSeconds || 0)) * speed; },
       decode: function (arrayBuffer) { return context().decodeAudioData(arrayBuffer); },
+      makeBuffer: function (samples, sampleRate) {
+        var made = context().createBuffer(1, samples.length, sampleRate);
+        made.copyToChannel(samples, 0);
+        return made;
+      },
       setSong: function (song) { pause(); notes = song.notes; midiDuration = song.duration; startPos = 0; loop = null; },
-      /* Swap the audio track in place, keeping the position. */
-      setBuffer: function (next, offsetSeconds) {
+      /* Swap the audio track and the speed in place, keeping the position.
+       * `next` must already be stretched for `nextSpeed`. */
+      setBuffer: function (next, offsetSeconds, nextSpeed) {
         var at = position(), was = playing;
         if (was) { silence(); }
-        buffer = next || null; bufferOffset = offsetSeconds || 0;
+        buffer = next || null; bufferOffset = offsetSeconds || 0; speed = nextSpeed || 1;
         if (was) { startPos = Math.max(0, at); begin(); }
       },
       setGuide: function (on) {

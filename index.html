@@ -33,6 +33,11 @@
     <button type="button" id="play" class="primary">Play</button>
     <button type="button" id="restart">Start</button>
     <button type="button" id="back">−5 s</button>
+    <span class="speed" role="group" aria-label="Speed">
+      <button type="button" id="slower" aria-label="Slower by 10%">−</button>
+      <output id="speed" aria-live="polite">100%</output>
+      <button type="button" id="faster" aria-label="Faster by 10%">+</button>
+    </span>
     <input type="range" id="seek" min="0" max="1" step="0.1" value="0" aria-label="Position">
     <span id="time">0:00 / 0:00</span>
     <button type="button" id="loop-a">A</button>
@@ -102,6 +107,7 @@
   <script src="js/midi.js"></script>
   <script src="js/layout.js"></script>
   <script src="js/source.js"></script>
+  <script src="js/stretch.js"></script>
   <script src="js/engine.js"></script>
   <script src="js/app.js"></script>
 </body>

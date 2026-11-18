@@ -50,6 +50,9 @@ button.primary, .modes button[aria-pressed="true"] {
 .check { display: flex; align-items: center; gap: 6px; min-height: 44px; }
 .check input { width: 22px; height: 22px; accent-color: var(--accent); }
 #seek { flex: 1 1 120px; min-width: 0; height: 44px; accent-color: var(--accent); }
+.speed { display: flex; align-items: center; gap: 4px; }
+.speed button { min-width: 44px; padding: 0; font-size: 22px; }
+#speed { min-width: 52px; text-align: center; color: var(--text); font-variant-numeric: tabular-nums; }
 #time { font-variant-numeric: tabular-nums; color: var(--muted); min-width: 92px; text-align: center; }
 
 dialog {

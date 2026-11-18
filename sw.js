@@ -11,6 +11,7 @@ var SHELL = [
   "js/midi.js",
   "js/layout.js",
   "js/source.js",
+  "js/stretch.js",
   "js/engine.js",
   "js/app.js",
   "manifest.webmanifest",

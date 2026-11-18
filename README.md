@@ -16,6 +16,10 @@ GitHub repository and are read with a read-only token carried in the link.
   its length is how long to hold it. Faint lines are beats, strong lines bars.
 - **Colours**: teal = white key, violet = black key, amber = the note is
   outside the 25 keys and was moved by octaves so there is still a key to press.
+- **− 100% +**: slow everything down by steps of 10%, down to 50%. The
+  recording keeps its pitch (it is time-stretched on the device, which takes a
+  second or two the first time and adds some blur at low speeds), so the synth
+  stays in tune with it. Guide bass, falling notes and loop follow.
 - **A / B / Loop off**: repeat a passage. **−5 s** and **Start** to go back.
 - **Settings**: latency (for Bluetooth headphones), volumes, seconds shown
   ahead, moving the notes one octave left or right, full screen.
@@ -105,6 +109,7 @@ way to check an export before pushing it.
 | `js/midi.js` | MIDI file → notes in seconds (tempo map, beats). |
 | `js/layout.js` | The 25 keys, and where a note lands on them. |
 | `js/source.js` | Link code, GitHub reads, on-device cache keyed by content hash. |
+| `js/stretch.js` | Slows a recording down without changing its pitch. |
 | `js/engine.js` | Web Audio transport: recording, guide bass, loop, one clock. |
 | `js/app.js` | Controls and the canvas. |
 | `sw.js` | Caches the app shell for offline use. |

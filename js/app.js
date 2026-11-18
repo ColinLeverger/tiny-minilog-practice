@@ -1,20 +1,21 @@
 /* UI glue: song list, modes, transport, and the falling-notes picture. */
 (function () {
   "use strict";
-  var Midi = window.TprMidi, Layout = window.TprLayout, Source = window.TprSource;
+  var Midi = window.TprMidi, Layout = window.TprLayout, Source = window.TprSource, Stretch = window.TprStretch;
   var PREFS_KEY = "tpr_prefs_v1";
   var COLORS = { white: "#35d0c3", black: "#b48cff", folded: "#e0a030" };
 
   function $(id) { return document.getElementById(id); }
 
   var prefs = Object.assign({
-    latencyMs: 0, guide: true, guideVolume: 0.8, mixVolume: 0.9, look: 3, mode: "backing", song: null, shift: {}
+    latencyMs: 0, speedPct: 100, guide: true, guideVolume: 0.8, mixVolume: 0.9, look: 3, mode: "backing", song: null, shift: {}
   }, (function () { try { return JSON.parse(localStorage.getItem(PREFS_KEY)) || {}; } catch (_) { return {}; } })());
   function savePrefs() { try { localStorage.setItem(PREFS_KEY, JSON.stringify(prefs)); } catch (_) { /* private mode */ } }
 
   var engine = window.TprEngine.create({ onEnd: function () { releaseWake(); syncTransport(); } });
   var config = null, files = {}, songs = [], song = null, parsed = null, low = 28, mode = "silent";
   var loadId = 0, loopA = null, wake = null, seeking = false;
+  var original = null, stretched = null, speedTimer = null; // decoded recording, and its slowed copy
 
   /* ---------- status ---------- */
   function status(text, isError) {
@@ -101,7 +102,7 @@
       }
       parsed = { notes: notes, beats: result.beats, duration: notes.reduce(function (m, n) { return Math.max(m, n.end); }, 0) };
       engine.setSong(parsed);
-      engine.setBuffer(null, 0);
+      original = null; engine.setBuffer(null, 0, speedOf());
       placeNotes();
       if (!item.demo && !item.local) { prefs.song = item.id; savePrefs(); }
       var wanted = [prefs.mode, "backing", "full"].filter(function (m) { return m === "silent" || has(item, m); })[0] || "silent";
@@ -120,19 +121,56 @@
     mode = next;
     if (!keepPreference) { prefs.mode = next; savePrefs(); }
     syncModes();
-    if (next === "silent") { engine.setBuffer(null, 0); return; }
+    if (next === "silent") { original = null; engine.setBuffer(null, 0, speedOf()); return; }
     status("Loading audio…");
     try {
       var audio = await engine.decode(await bytes(song, next));
       if (id !== loadId || mode !== next) return;
-      engine.setBuffer(audio, (song.offsetMs || 0) / 1000);
+      original = audio;
       status("");
+      await applySpeed();
     } catch (error) {
       if (id !== loadId) return;
-      mode = "silent"; engine.setBuffer(null, 0); syncModes();
+      mode = "silent"; original = null; engine.setBuffer(null, 0, speedOf()); syncModes();
       status(error.message || "This audio file could not be read.", true);
     }
     syncTransport();
+  }
+
+  /* ---------- speed ---------- */
+  function speedOf() { return prefs.speedPct / 100; }
+  function mono(buffer) {
+    if (buffer.numberOfChannels === 1) return buffer.getChannelData(0);
+    var left = buffer.getChannelData(0), right = buffer.getChannelData(1), mixed = new Float32Array(left.length);
+    for (var i = 0; i < mixed.length; i++) mixed[i] = (left[i] + right[i]) / 2;
+    return mixed;
+  }
+  /* Give the engine the recording at the chosen speed. Slowed copies are
+   * computed on the device, once per song, mode and speed. */
+  async function applySpeed() {
+    var speed = speedOf(), offset = song ? (song.offsetMs || 0) / 1000 : 0;
+    if (!original || speed === 1) { engine.setBuffer(original, offset, speed); return; }
+    if (!stretched || stretched.source !== original || stretched.speed !== speed) {
+      var source = original;
+      status("Preparing the slower recording…");
+      await new Promise(function (resolve) { setTimeout(resolve, 30); }); // let the message show
+      if (source !== original || speed !== speedOf()) return;
+      var samples = Stretch.stretch(mono(source), speed);
+      stretched = { source: source, speed: speed, buffer: engine.makeBuffer(samples, source.sampleRate) };
+      status("");
+    }
+    engine.setBuffer(stretched.buffer, offset, speed);
+  }
+  function changeSpeed(by) {
+    prefs.speedPct = Math.max(50, Math.min(100, prefs.speedPct + by));
+    savePrefs(); syncSpeed();
+    clearTimeout(speedTimer); // several taps in a row compute once
+    speedTimer = setTimeout(function () { applySpeed().catch(function (error) { status(error.message, true); }); syncTransport(); }, 350);
+  }
+  function syncSpeed() {
+    $("speed").textContent = prefs.speedPct + "%";
+    $("slower").disabled = prefs.speedPct <= 50;
+    $("faster").disabled = prefs.speedPct >= 100;
   }
 
   function shiftOf() { return (song && prefs.shift[song.id]) || 0; }
@@ -186,6 +224,9 @@
     });
     $("play").addEventListener("click", toggle);
     $("restart").addEventListener("click", function () { engine.seek(0); });
+    $("slower").addEventListener("click", function () { changeSpeed(-10); });
+    $("faster").addEventListener("click", function () { changeSpeed(10); });
+    syncSpeed();
     $("back").addEventListener("click", function () { engine.seek(engine.position() - 5); });
     $("seek").addEventListener("input", function () { seeking = true; engine.seek(Number($("seek").value)); });
     $("seek").addEventListener("change", function () { seeking = false; });
@@ -304,7 +345,7 @@
     g.clearRect(0, 0, width, height);
     var keyboardHeight = Math.min(height * 0.36, 280), fall = height - keyboardHeight;
     var t = engine.isPlaying() ? engine.visualPosition(prefs.latencyMs / 1000) : engine.position();
-    var look = prefs.look, scale = fall / look;
+    var look = prefs.look * engine.speed(), scale = fall / look; // same fall speed at any speed: slowed notes grow taller
     var keys = Layout.keys(low, width), byMidi = {};
     keys.forEach(function (k) { byMidi[k.midi] = k; });
     var lit = {};
