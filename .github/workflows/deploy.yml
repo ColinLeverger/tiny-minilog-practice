@@ -1,0 +1,48 @@
+# Test, then deploy the static site to GitHub Pages on every push to main.
+# Settings -> Pages -> Source: "GitHub Actions" to enable this.
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: make check
+
+  deploy:
+    needs: check
+    if: github.ref == 'refs/heads/main'
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Stamp release version
+        run: |
+          sed -i "s/^var VERSION = .*/var VERSION = \"tpr-${{ github.sha }}\";/" sw.js
+          sed -i "s/data-build=\"[^\"]*\"/data-build=\"${{ github.sha }}\"/" index.html
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: .
+      - id: deployment
+        uses: actions/deploy-pages@v4

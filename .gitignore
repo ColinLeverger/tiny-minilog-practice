@@ -1,0 +1,19 @@
+# Songs never live in this repository: they belong to the private data repo.
+*.mp3
+*.wav
+*.ogg
+*.m4a
+*.flac
+*.mid
+*.midi
+songs.json
+/private/
+
+.DS_Store
+.vscode/
+.idea/
+node_modules/
+.serena/
+.tokensave/
+.server.pid
+.server.log

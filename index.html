@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en" data-build="dev">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="referrer" content="no-referrer">
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self'; connect-src 'self' https://api.github.com; img-src 'self' data:; media-src 'self' blob:; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <meta name="theme-color" content="#14181d">
+  <title>Tiny Piano Rehearsal</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <header class="bar">
+    <select id="song" aria-label="Song"></select>
+    <div class="modes" role="group" aria-label="Backing track">
+      <button type="button" data-mode="full">With bass</button>
+      <button type="button" data-mode="backing">No bass</button>
+      <button type="button" data-mode="silent">Silent</button>
+    </div>
+    <label class="check"><input type="checkbox" id="guide"> Guide bass</label>
+    <button type="button" id="settings-open" aria-label="Settings">Settings</button>
+  </header>
+
+  <main>
+    <canvas id="stage" aria-label="Keyboard with the notes to play"></canvas>
+    <p id="status" role="status" hidden></p>
+  </main>
+
+  <footer class="bar">
+    <button type="button" id="play" class="primary">Play</button>
+    <button type="button" id="restart">Start</button>
+    <button type="button" id="back">−5 s</button>
+    <input type="range" id="seek" min="0" max="1" step="0.1" value="0" aria-label="Position">
+    <span id="time">0:00 / 0:00</span>
+    <button type="button" id="loop-a">A</button>
+    <button type="button" id="loop-b">B</button>
+    <button type="button" id="loop-clear" disabled>Loop off</button>
+  </footer>
+
+  <dialog id="settings">
+    <form method="dialog" class="sheet">
+      <h2>Settings</h2>
+
+      <fieldset>
+        <legend>Sync</legend>
+        <label>Lights too early? Raise this (Bluetooth headphones)
+          <span class="row"><input type="range" id="latency" min="-100" max="400" step="10"><output id="latency-out"></output></span>
+        </label>
+      </fieldset>
+
+      <fieldset>
+        <legend>Sound</legend>
+        <label>Song volume <input type="range" id="mix-volume" min="0" max="1" step="0.05"></label>
+        <label>Guide bass volume <input type="range" id="guide-volume" min="0" max="1" step="0.05"></label>
+      </fieldset>
+
+      <fieldset>
+        <legend>Picture</legend>
+        <label>Seconds shown ahead
+          <span class="row"><input type="range" id="look" min="1.5" max="6" step="0.5"><output id="look-out"></output></span>
+        </label>
+        <div class="row">
+          <span>Move notes on the keyboard</span>
+          <button type="button" id="shift-down">◀ Octave</button>
+          <output id="shift-out"></output>
+          <button type="button" id="shift-up">Octave ▶</button>
+        </div>
+        <button type="button" id="fullscreen">Full screen</button>
+      </fieldset>
+
+      <fieldset>
+        <legend>Try files from this device</legend>
+        <label>Bass MIDI <input type="file" id="file-midi" accept=".mid,.midi,audio/midi"></label>
+        <label>Song with bass <input type="file" id="file-full" accept="audio/*"></label>
+        <label>Song without bass <input type="file" id="file-backing" accept="audio/*"></label>
+        <button type="button" id="file-load">Load these files</button>
+      </fieldset>
+
+      <fieldset>
+        <legend>Song library (private GitHub repository)</legend>
+        <label>Repository <input type="text" id="src-repo" placeholder="owner/repository" autocomplete="off" autocapitalize="off" spellcheck="false"></label>
+        <label>Branch <input type="text" id="src-branch" placeholder="main" autocomplete="off" autocapitalize="off" spellcheck="false"></label>
+        <label>Read-only token <input type="password" id="src-token" autocomplete="off"></label>
+        <div class="row">
+          <button type="button" id="src-save">Save and load</button>
+          <button type="button" id="src-copy">Copy link for a friend</button>
+          <button type="button" id="src-forget">Forget on this device</button>
+        </div>
+        <input type="text" id="src-link" readonly hidden aria-label="Link for a friend">
+        <p class="hint">The link contains the token. Whoever has it can read the song repository. Send it privately.</p>
+        <p id="src-message" class="hint" role="status"></p>
+      </fieldset>
+
+      <button class="primary">Close</button>
+    </form>
+  </dialog>
+
+  <script src="js/midi.js"></script>
+  <script src="js/layout.js"></script>
+  <script src="js/source.js"></script>
+  <script src="js/engine.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

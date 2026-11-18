@@ -1,0 +1,14 @@
+{
+  "name": "Tiny Piano Rehearsal",
+  "short_name": "TinyPiano",
+  "description": "Press play, follow the lit keys: bass lines for a 37-key synth, synced to the song.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "landscape",
+  "background_color": "#14181d",
+  "theme_color": "#14181d",
+  "icons": [
+    { "src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}
