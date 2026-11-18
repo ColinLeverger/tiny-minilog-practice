@@ -192,8 +192,9 @@
     $("play").textContent = engine.isPlaying() ? "Pause" : "Play";
     $("seek").max = String(Math.max(1, engine.duration()));
     var loop = engine.getLoop();
-    $("loop-a").textContent = loopA != null ? "A " + clock(loopA) : "A";
-    $("loop-b").textContent = loop ? "B " + clock(loop.b) : "B";
+    $("loop-a").textContent = loopA != null ? "A " + clock(loopA) : "Set A";
+    $("loop-b").textContent = loop ? "B " + clock(loop.b) : "Set B";
+    $("loop-b").disabled = loopA == null;
     $("loop-clear").disabled = loopA == null && !loop;
   }
 
@@ -264,7 +265,7 @@
     slider("guide-volume", "guideVolume", engine.setGuideVolume);
     engine.setGuide(prefs.guide);
 
-    $("settings-open").addEventListener("click", function () {
+    function openSettings() {
       var saved = Source.readConfig();
       $("src-repo").value = saved ? saved.repo : "";
       $("src-branch").value = saved ? saved.branch : "main";
@@ -272,7 +273,10 @@
       $("src-link").hidden = true; $("src-message").textContent = "";
       $("setup").open = false; // setup stays folded away for the player
       $("settings").showModal();
-    });
+      document.querySelector(".sheet-body").scrollTop = 0;
+    }
+    $("settings-open").addEventListener("click", openSettings);
+    bindInstall(openSettings);
     function moveNotes(by) {
       if (!song) return;
       prefs.shift[song.id] = Math.max(-2, Math.min(2, shiftOf() + by));
@@ -280,9 +284,19 @@
     }
     $("shift-down").addEventListener("click", function () { moveNotes(-1); });
     $("shift-up").addEventListener("click", function () { moveNotes(1); });
-    $("fullscreen").addEventListener("click", function () {
-      if (document.fullscreenElement) document.exitFullscreen();
-      else if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen().catch(function () {});
+    document.addEventListener("fullscreenchange", function () {
+      $("fullscreen").textContent = document.fullscreenElement ? "Exit full screen" : "Full screen";
+    });
+    $("fullscreen").addEventListener("click", async function () {
+      try {
+        if (document.fullscreenElement) await document.exitFullscreen();
+        else if (document.documentElement.requestFullscreen) await document.documentElement.requestFullscreen();
+        else throw new Error("Full screen is unavailable");
+      } catch (_) {
+        openSettings();
+        $("install-message").textContent = "Full screen is unavailable here. Use Chrome’s menu (⋮) → Add to home screen → Install, then open the TinyPiano icon.";
+        $("install-help").scrollIntoView({ block: "nearest" });
+      }
     });
 
     $("file-load").addEventListener("click", function () {
@@ -322,6 +336,33 @@
     });
   }
 
+  function bindInstall(openSettings) {
+    var prompt = null;
+    function showInstalled() {
+      prompt = null;
+      $("install").textContent = "Installed";
+      $("install").disabled = true;
+      $("install-message").textContent = "Ready on this tablet. Next time, tap the TinyPiano icon on your home screen.";
+    }
+    if (window.matchMedia("(display-mode: standalone)").matches) showInstalled();
+    window.addEventListener("beforeinstallprompt", function (event) {
+      event.preventDefault(); prompt = event;
+    });
+    window.addEventListener("appinstalled", showInstalled);
+    $("install").addEventListener("click", async function () {
+      if (prompt) {
+        var request = prompt; prompt = null;
+        try {
+          await request.prompt();
+          var choice = await request.userChoice;
+          if (choice.outcome === "accepted") return;
+        } catch (_) { /* the menu instructions also work without a prompt */ }
+      }
+      openSettings();
+      $("install-help").scrollIntoView({ block: "nearest" });
+    });
+  }
+
   /* ---------- picture ---------- */
   var canvas = $("stage"), g = canvas.getContext("2d"), width = 0, height = 0;
   function resize() {
@@ -344,7 +385,7 @@
     requestAnimationFrame(draw);
     if (!width) return;
     g.clearRect(0, 0, width, height);
-    var keyboardHeight = Math.min(height * 0.36, 280), fall = height - keyboardHeight;
+    var keyboardHeight = Math.min(Math.max(height * 0.36, 152), height * 0.48, 280), fall = height - keyboardHeight;
     var t = engine.isPlaying() ? engine.visualPosition(prefs.latencyMs / 1000) : engine.position();
     var look = prefs.look * engine.speed(), scale = fall / look; // same fall speed at any speed: slowed notes grow taller
     var keys = Layout.keys(low, width), byMidi = {};

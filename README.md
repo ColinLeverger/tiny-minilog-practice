@@ -27,6 +27,13 @@ GitHub repository and are read with a read-only token carried in the link.
 
 The page works offline after each song was opened once online.
 
+On an Android tablet, tap **Install** to add TinyPiano to the home screen. If
+Chrome does not offer the install prompt, the button shows instructions for
+Chrome’s three-dot menu on the same tablet. Open the TinyPiano icon next time
+for a view without browser bars, or tap **Full screen** while playing in a tab.
+Landscape gives the largest keys; portrait keeps all controls available and
+shows a reminder to turn the tablet.
+
 ## Adding songs (the private data repository)
 
 Layout, at the root of the data repository:

@@ -17,3 +17,4 @@ node_modules/
 .tokensave/
 .server.pid
 .server.log
+.shots/

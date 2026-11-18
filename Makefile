@@ -43,7 +43,7 @@ health:  ## Fetch the page once
 	@curl -sf -o /dev/null -w "%{http_code} $(BASE)/\n" $(BASE)/
 
 smoke:  ## Prove the served page and every file it loads answer
-	@for f in index.html sw.js manifest.webmanifest icons/icon.svg css/styles.css \
+	@for f in index.html sw.js manifest.webmanifest icons/icon.svg icons/icon-192.png icons/icon-512.png css/styles.css \
 	          $$(grep -o 'js/[a-z]*\.js' index.html); do \
 	   curl -sf -o /dev/null $(BASE)/$$f || { echo "smoke: FAILED on $$f (is 'make run' up?)"; exit 1; }; \
 	 done; echo "smoke: OK"

@@ -21,9 +21,12 @@
       <button type="button" data-mode="silent">Silent</button>
     </div>
     <label class="check"><input type="checkbox" id="guide"> Guide bass</label>
+    <button type="button" id="fullscreen">Full screen</button>
+    <button type="button" id="install">Install</button>
     <button type="button" id="settings-open" aria-label="Settings">Settings</button>
   </header>
 
+  <p class="rotate-tip">Turn your tablet sideways for bigger keys. You can still play this way.</p>
   <main>
     <canvas id="stage" aria-label="Keyboard with the notes to play"></canvas>
     <p id="status" role="status" hidden></p>
@@ -38,73 +41,86 @@
       <output id="speed" aria-live="polite">100%</output>
       <button type="button" id="faster" aria-label="Faster by 10%">+</button>
     </span>
-    <input type="range" id="seek" min="0" max="1" step="0.1" value="0" aria-label="Position">
-    <span id="time">0:00 / 0:00</span>
-    <button type="button" id="loop-a">A</button>
-    <button type="button" id="loop-b">B</button>
-    <button type="button" id="loop-clear" disabled>Loop off</button>
+    <div class="timeline">
+      <input type="range" id="seek" min="0" max="1" step="0.1" value="0" aria-label="Position">
+      <span id="time">0:00 / 0:00</span>
+    </div>
+    <div class="loops" role="group" aria-label="Repeat a passage">
+      <button type="button" id="loop-a" aria-label="Set loop start A">Set A</button>
+      <button type="button" id="loop-b" aria-label="Set loop end B" disabled>Set B</button>
+      <button type="button" id="loop-clear" disabled>Loop off</button>
+    </div>
   </footer>
 
-  <dialog id="settings">
+  <dialog id="settings" aria-labelledby="settings-title">
     <form method="dialog" class="sheet">
-      <h2>Settings</h2>
-
-      <fieldset>
-        <legend>Volume</legend>
-        <label>Song <input type="range" id="mix-volume" min="0" max="1" step="0.05"></label>
-        <label>Guide bass <input type="range" id="guide-volume" min="0" max="1" step="0.05"></label>
-      </fieldset>
-
-      <fieldset>
-        <legend>Screen</legend>
-        <div class="row">
-          <button type="button" id="shift-down">◀ Notes left</button>
-          <output id="shift-out"></output>
-          <button type="button" id="shift-up">Notes right ▶</button>
-        </div>
-        <label>Notes visible ahead
-          <span class="row"><input type="range" id="look" min="1.5" max="6" step="0.5"><output id="look-out"></output></span>
-        </label>
-        <button type="button" id="fullscreen">Full screen</button>
-      </fieldset>
-
-      <fieldset>
-        <legend>Timing</legend>
-        <label>Keys light up before you hear the note? Move right.
-          <span class="row"><input type="range" id="latency" min="-100" max="400" step="10"><output id="latency-out"></output></span>
-        </label>
-        <p class="hint">Bluetooth headphones usually need about 200 ms.</p>
-      </fieldset>
-
-      <details id="setup" class="setup">
-        <summary>Setup (adding songs)</summary>
+      <div class="sheet-head">
+        <h2 id="settings-title">Settings</h2>
+        <button class="primary">Close</button>
+      </div>
+      <div class="sheet-body">
 
         <fieldset>
-          <legend>Try files from this device</legend>
-          <label>Bass MIDI <input type="file" id="file-midi" accept=".mid,.midi,audio/midi"></label>
-          <label>Tempo in BPM, only when the MIDI file has none <input type="text" id="file-bpm" inputmode="decimal" placeholder="120"></label>
-          <label>Song with bass <input type="file" id="file-full" accept="audio/*"></label>
-          <label>Song without bass <input type="file" id="file-backing" accept="audio/*"></label>
-          <button type="button" id="file-load">Load these files</button>
+          <legend>Volume</legend>
+          <label>Song <input type="range" id="mix-volume" min="0" max="1" step="0.05"></label>
+          <label>Guide bass <input type="range" id="guide-volume" min="0" max="1" step="0.05"></label>
         </fieldset>
 
         <fieldset>
-          <legend>Song library (private GitHub repository)</legend>
-          <label>Repository <input type="text" id="src-repo" placeholder="owner/repository" autocomplete="off" autocapitalize="off" spellcheck="false"></label>
-          <label>Branch <input type="text" id="src-branch" placeholder="main" autocomplete="off" autocapitalize="off" spellcheck="false"></label>
-          <label>Read-only token <input type="password" id="src-token" autocomplete="off"></label>
+          <legend>Screen</legend>
           <div class="row">
-            <button type="button" id="src-save">Save and load</button>
-            <button type="button" id="src-copy">Copy link for a friend</button>
-            <button type="button" id="src-forget">Forget on this device</button>
+            <button type="button" id="shift-down">◀ Notes left</button>
+            <output id="shift-out"></output>
+            <button type="button" id="shift-up">Notes right ▶</button>
           </div>
-          <input type="text" id="src-link" readonly hidden aria-label="Link for a friend">
-          <p class="hint">The link contains the token. Whoever has it can read the song repository. Send it privately.</p>
+          <label>Notes visible ahead
+            <span class="row"><input type="range" id="look" min="1.5" max="6" step="0.5"><output id="look-out"></output></span>
+          </label>
         </fieldset>
-        <p id="src-message" class="hint" role="status"></p>
-      </details>
 
-      <button class="primary">Close</button>
+        <fieldset>
+          <legend>Timing</legend>
+          <label>Keys light up before you hear the note? Move right.
+            <span class="row"><input type="range" id="latency" min="-100" max="400" step="10"><output id="latency-out"></output></span>
+          </label>
+          <p class="hint">Bluetooth headphones usually need about 200 ms.</p>
+        </fieldset>
+
+        <fieldset id="install-help">
+          <legend>Keep it on this tablet</legend>
+          <p id="install-message" role="status">In Chrome, tap the three-dot menu (⋮) → Add to home screen → Install. If Chrome offers Create shortcut instead, use it, then tap Full screen here when you play.</p>
+          <p class="hint">Next time, open the TinyPiano icon on your home screen. An installed app opens without browser bars.</p>
+        </fieldset>
+
+        <details id="setup" class="setup">
+          <summary>Setup (adding songs)</summary>
+
+          <fieldset>
+            <legend>Try files from this device</legend>
+            <label>Bass MIDI <input type="file" id="file-midi" accept=".mid,.midi,audio/midi"></label>
+            <label>Tempo in BPM, only when the MIDI file has none <input type="text" id="file-bpm" inputmode="decimal" placeholder="120"></label>
+            <label>Song with bass <input type="file" id="file-full" accept="audio/*"></label>
+            <label>Song without bass <input type="file" id="file-backing" accept="audio/*"></label>
+            <button type="button" id="file-load">Load these files</button>
+          </fieldset>
+
+          <fieldset>
+            <legend>Song library (private GitHub repository)</legend>
+            <label>Repository <input type="text" id="src-repo" placeholder="owner/repository" autocomplete="off" autocapitalize="off" spellcheck="false"></label>
+            <label>Branch <input type="text" id="src-branch" placeholder="main" autocomplete="off" autocapitalize="off" spellcheck="false"></label>
+            <label>Read-only token <input type="password" id="src-token" autocomplete="off"></label>
+            <div class="row">
+              <button type="button" id="src-save">Save and load</button>
+              <button type="button" id="src-copy">Copy link for a friend</button>
+              <button type="button" id="src-forget">Forget on this device</button>
+            </div>
+            <input type="text" id="src-link" readonly hidden aria-label="Link for a friend">
+            <p class="hint">The link contains the token. Whoever has it can read the song repository. Send it privately.</p>
+          </fieldset>
+          <p id="src-message" class="hint" role="status"></p>
+        </details>
+
+      </div>
     </form>
   </dialog>
 
