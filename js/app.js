@@ -146,20 +146,35 @@
     return mixed;
   }
   /* Give the engine the recording at the chosen speed. Slowed copies are
-   * computed on the device, once per song, mode and speed. */
+   * computed on the device, once per song, mode and speed, in slices: until
+   * the copy is ready the song plays on at the previous speed, guide bass,
+   * loop and picture included, and then switches at the same song time. */
+  var PREPARING = "Preparing the slower recording…", preparing = null; // { source, speed, done }
+  function preparedFor(source, speed) {
+    if (preparing && preparing.source === source && preparing.speed === speed) return preparing.done;
+    var job = { source: source, speed: speed };
+    job.done = Stretch.stretchAsync(mono(source), speed, function () { return source !== original || speed !== speedOf(); })
+      .then(function (samples) {
+        if (samples) stretched = { source: source, speed: speed, buffer: engine.makeBuffer(samples, source.sampleRate) };
+      })
+      .finally(function () { if (preparing === job) preparing = null; });
+    preparing = job;
+    return job.done;
+  }
   async function applySpeed() {
-    var speed = speedOf(), offset = song ? (song.offsetMs || 0) / 1000 : 0;
-    if (!original || speed === 1) { engine.setBuffer(original, offset, speed); return; }
-    if (!stretched || stretched.source !== original || stretched.speed !== speed) {
-      var source = original;
-      status("Preparing the slower recording…");
-      await new Promise(function (resolve) { setTimeout(resolve, 30); }); // let the message show
-      if (source !== original || speed !== speedOf()) return;
-      var samples = Stretch.stretch(mono(source), speed);
-      stretched = { source: source, speed: speed, buffer: engine.makeBuffer(samples, source.sampleRate) };
-      status("");
+    var speed = speedOf(), source = original, offset = song ? (song.offsetMs || 0) / 1000 : 0;
+    var ready = function () { return stretched && stretched.source === source && stretched.speed === speed; };
+    if (source && speed !== 1 && !ready()) {
+      status(PREPARING);
+      await preparedFor(source, speed);
+      // Superseded (other speed, mode or song): whoever changed it applies its own.
+      if (source !== original || speed !== speedOf() || !ready()) {
+        if (!preparing && $("status").textContent === PREPARING) status("");
+        return;
+      }
     }
-    engine.setBuffer(stretched.buffer, offset, speed);
+    if ($("status").textContent === PREPARING) status("");
+    engine.setBuffer(speed === 1 || !source ? source : stretched.buffer, offset, speed);
   }
   function changeSpeed(by) {
     prefs.speedPct = Math.max(50, Math.min(100, prefs.speedPct + by));

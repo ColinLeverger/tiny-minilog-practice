@@ -19,7 +19,10 @@ GitHub repository and are read with a read-only token carried in the link.
 - **− 100% +**: slow everything down by steps of 10%, down to 50%. The
   recording keeps its pitch (it is time-stretched on the device, which takes a
   second or two the first time and adds some blur at low speeds), so the synth
-  stays in tune with it. Guide bass, falling notes and loop follow.
+  stays in tune with it. Guide bass, falling notes and loop follow. While
+  "Preparing the slower recording…" shows, the song plays on at the previous
+  speed; it then switches at the same point in the song. Slowed copies stay
+  within 6 ms of the song's timing from the first bar to the last.
 - **A / B / Loop off**: repeat a passage. **−5 s** and **Start** to go back.
 - **Settings**: volumes, moving the notes one octave left or right, how far
   ahead notes show, full screen, and timing (for Bluetooth headphones). Loading
