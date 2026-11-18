@@ -96,7 +96,7 @@ output { min-width: 56px; color: var(--text); font-variant-numeric: tabular-nums
 .setup summary { min-height: 48px; padding: 12px 0; color: var(--muted); cursor: pointer; }
 .setup[open] > fieldset { margin: 12px 0; }
 .choice { display: flex; gap: 6px; }
-.choice[hidden] { display: none; }
+.choice[hidden], label[hidden] { display: none; }
 .choice button { flex: 1; }
 .choice button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: #06201e; font-weight: 700; }
 .hint { margin: 0; color: var(--muted); font-size: 16px; }

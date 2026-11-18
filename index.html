@@ -72,16 +72,16 @@
             <button type="button" id="view-keys">Keyboard</button>
             <button type="button" id="view-bass">Bass neck</button>
           </div>
-          <div class="choice" id="strings-row" role="group" aria-label="Bass strings" hidden>
-            <button type="button" id="strings-4">4 strings</button>
-            <button type="button" id="strings-5">5 strings</button>
+          <div class="choice" role="group" aria-label="Falling notes">
+            <button type="button" id="fall-show">Falling notes</button>
+            <button type="button" id="fall-hide">Lights only</button>
           </div>
           <div class="row">
             <button type="button" id="shift-down">◀ Notes left</button>
             <output id="shift-out"></output>
             <button type="button" id="shift-up">Notes right ▶</button>
           </div>
-          <label>Notes visible ahead
+          <label id="look-row">Notes visible ahead
             <span class="row"><input type="range" id="look" min="1.5" max="6" step="0.5"><output id="look-out"></output></span>
           </label>
         </fieldset>

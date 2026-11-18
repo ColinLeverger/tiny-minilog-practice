@@ -26,12 +26,15 @@ GitHub repository and are read with a read-only token carried in the link.
 - **Bass neck** (*Settings → Screen*): the same falling notes over a bass
   neck instead of the keyboard. One column per fret (the first one is the
   open string), notes in their string's colour with the fret number on them,
-  and the neck lights the string and fret to press. Low E is drawn at the top,
-  as the player sees the neck. 4 or 5 strings (low B), standard tuning. Each
+  and the neck lights the string and fret to press. Strings are in tab order,
+  G at the top and low E at the bottom. 4-string bass, standard tuning. Each
   note is placed where it is easiest to play: the app keeps the hand in one
   four-fret position, uses open strings, prefers low frets and only moves the
   hand when the line needs it. A link ending in `#v=bass` opens straight on
   the neck (`#v=keys` for the keyboard).
+- **Falling notes / Lights only** (*Settings → Screen*): hide the falling
+  notes, for keyboard and neck alike. The instrument then grows and only
+  lights up, with a dashed outline on the next key or fret to press.
 - **A / B / Loop off**: repeat a passage. **−5 s** and **Start** to go back.
 - **Settings**: volumes, moving the notes one octave left or right, how far
   ahead notes show, full screen, and timing (for Bluetooth headphones). Loading
