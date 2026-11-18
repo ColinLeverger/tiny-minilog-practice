@@ -72,6 +72,7 @@
      * low end for headphones, the filtered saw and the octave add the
      * harmonics a small speaker can reproduce. */
     function voice(note, when, length) {
+      when = Math.max(when, ctx.currentTime); // rounding must never ask for a time in the past
       var f = frequency(note.midi), peak = 0.35 + 0.45 * (note.velocity / 127);
       var end = when + Math.max(length, 0.05);
       var env = ctx.createGain();
@@ -117,7 +118,9 @@
       var pos = position(), horizon = pos + 0.3 * speed;
       while (cursor < notes.length && notes[cursor].start < horizon) {
         var note = notes[cursor++];
-        var from = Math.max(note.start, pos);
+        // Never before the requested start: on the first pass the clock still
+        // reads up to 60 ms earlier, and that would schedule sound in the past.
+        var from = Math.max(note.start, pos, startPos);
         if (note.end - from > 0.02) voice(note, startCtx + (from - startPos) / speed, (note.end - from) / speed);
       }
     }

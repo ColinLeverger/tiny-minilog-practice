@@ -165,3 +165,23 @@ test("the end of a slowed song is detected when the song ends, not before or aft
   r.advance(4); assert.ok(r.engine.isPlaying(), "stopped early");
   r.advance(1); assert.ok(!r.engine.isPlaying(), "never stopped");
 });
+
+test("starting in the middle of a note never schedules sound before the start", async (t) => {
+  // Chrome rejects a negative time; on a brand-new audio context (currentTime 0)
+  // a note already sounding at the start point used to land at about -2e-15 s,
+  // which threw, left Play showing "Play" and stopped the guide bass.
+  for (const at of [10.1, 3.37, 7.77, 0.43, 41.9]) {
+    const r = rig(t);
+    const strict = (time) => { if (!(time >= 0)) throw new RangeError("time must be non-negative: " + time); };
+    r.log.voices.length = 0;
+    const createOscillator = r.ctx.createOscillator.bind(r.ctx);
+    r.ctx.createOscillator = () => { const o = createOscillator(); const start = o.start; o.start = function (time) { strict(time); return start.call(this, time); }; return o; };
+    const createGain = r.ctx.createGain;
+    r.ctx.createGain = () => { const n = createGain(); n.gain.setValueAtTime = strict; n.gain.linearRampToValueAtTime = strict; return n; };
+    r.engine.setSong(notesEvery(0.5, 60)); // notes 0.25 s long, so `at` sits inside one or just after
+    r.engine.seek(at);
+    await r.engine.play();
+    const first = Math.min(...r.log.voices.map((o) => o.startAt));
+    assert.ok(first >= 0.06 - 1e-9, `seek ${at}: a guide note starts at ${first}, before playback begins at 0.06`);
+  }
+});
