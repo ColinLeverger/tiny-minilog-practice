@@ -2,7 +2,9 @@
 (function (root) {
   "use strict";
 
-  function parse(input) {
+  /* options.bpm: tempo to use when the file states none (some DAWs export
+   * the notes without it, and the MIDI default of 120 is then wrong). */
+  function parse(input, options) {
     var bytes = input instanceof Uint8Array ? input : new Uint8Array(input);
     var view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
     var pos = 0;
@@ -79,7 +81,8 @@
 
     // Tempo map: segments of constant tempo, each knowing its start in seconds.
     tempos.sort(function (a, b) { return a.tick - b.tick; });
-    var map = [{ tick: 0, seconds: 0, us: 500000 }];
+    var fallback = options && options.bpm > 0 ? 6e7 / options.bpm : 500000;
+    var map = [{ tick: 0, seconds: 0, us: fallback }];
     tempos.forEach(function (t) {
       var last = map[map.length - 1];
       if (t.tick === last.tick) { last.us = t.us; return; }
@@ -104,7 +107,8 @@
     return {
       notes: notes, beats: beats, tracks: tracks,
       duration: notes.reduce(function (m, n) { return Math.max(m, n.end); }, 0),
-      bpm: Math.round(6e7 / map[0].us * 10) / 10
+      bpm: Math.round(6e7 / map[0].us * 10) / 10,
+      hasTempo: tempos.length > 0
     };
   }
 

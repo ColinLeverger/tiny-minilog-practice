@@ -88,10 +88,11 @@
     $("song").value = item.id;
     status("Loading " + item.title + "…");
     try {
-      var result = item.demo ? demoSong() : Midi.parse(await bytes(item, "midi"));
+      var result = item.demo ? demoSong() : Midi.parse(await bytes(item, "midi"), { bpm: item.bpm });
       if (id !== loadId) return;
       var notes = result.notes;
       if (item.track != null) notes = notes.filter(function (n) { return n.track === item.track; });
+      if (item.ignoreNotes && item.ignoreNotes.length) notes = notes.filter(function (n) { return item.ignoreNotes.indexOf(n.midi) < 0; });
       if (!notes.length) throw new Error("No notes found in the MIDI file of " + item.title + ".");
       var shift = (item.midiOffsetMs || 0) / 1000;
       if (shift) {
@@ -247,6 +248,7 @@
       if (!midi) { $("src-message").textContent = "Choose at least the bass MIDI file."; return; }
       var item = {
         id: "local", title: midi.name.replace(/\.midi?$/i, "") + " (this device)",
+        bpm: Number($("file-bpm").value) || null,
         local: { midi: midi, full: $("file-full").files[0] || null, backing: $("file-backing").files[0] || null }
       };
       songs = songs.filter(function (s) { return s.id !== "local"; }).concat(item);

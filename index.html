@@ -74,6 +74,7 @@
       <fieldset>
         <legend>Try files from this device</legend>
         <label>Bass MIDI <input type="file" id="file-midi" accept=".mid,.midi,audio/midi"></label>
+        <label>Tempo in BPM, only when the MIDI file has none <input type="text" id="file-bpm" inputmode="decimal" placeholder="120"></label>
         <label>Song with bass <input type="file" id="file-full" accept="audio/*"></label>
         <label>Song without bass <input type="file" id="file-backing" accept="audio/*"></label>
         <button type="button" id="file-load">Load these files</button>

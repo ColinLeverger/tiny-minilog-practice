@@ -153,7 +153,9 @@
         backing: song.backing ? safePath(song.backing) : null,
         offsetMs: Number(song.offsetMs) || 0,
         midiOffsetMs: Number(song.midiOffsetMs) || 0,
-        track: Number.isInteger(song.track) ? song.track : null
+        track: Number.isInteger(song.track) ? song.track : null,
+        bpm: Number(song.bpm) > 0 ? Number(song.bpm) : null,
+        ignoreNotes: Array.isArray(song.ignoreNotes) ? song.ignoreNotes.filter(Number.isInteger) : []
       };
     });
   }

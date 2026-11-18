@@ -63,3 +63,14 @@ test("a file that is not MIDI, or cut short, is refused with a readable message"
   const whole = file(96, [[0, 0x90, 36, 100, 96, 0x80, 36, 0, ...END]]);
   assert.throws(() => Midi.parse(whole.subarray(0, whole.length - 5)), /truncated/);
 });
+
+test("a file with no tempo uses the tempo given for the song, and says so", () => {
+  const bytes = file(96, [[0, 0x90, 36, 100, 96, 0x80, 36, 0, ...END]]);
+  const plain = Midi.parse(bytes);
+  assert.strictEqual(plain.hasTempo, false);
+  near(plain.notes[0].end, 0.5);                           // MIDI default, 120
+  near(Midi.parse(bytes, { bpm: 128 }).notes[0].end, 60 / 128);
+  const stated = Midi.parse(file(96, [[...tempo(0, 1000000), 0, 0x90, 36, 100, 96, 0x80, 36, 0, ...END]]), { bpm: 128 });
+  assert.strictEqual(stated.hasTempo, true);
+  near(stated.notes[0].end, 1);                            // the file's own tempo wins
+});

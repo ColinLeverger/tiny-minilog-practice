@@ -49,6 +49,8 @@ my-song/bass.mid      the bass line
 | `offsetMs` | Silence at the start of the audio files that the MIDI does not have. MP3 encoders add 25 to 50 ms; raise it when the lights run ahead of the recording. |
 | `midiOffsetMs` | Shifts the notes instead, for a MIDI exported from the first note rather than from bar 1. |
 | `track` | Track number (from 0) when the MIDI holds more than the bass. |
+| `bpm` | Song tempo, used only when the MIDI file states none. Without it such a file is read at 120 and drifts. |
+| `ignoreNotes` | MIDI note numbers to drop, e.g. marker notes placed at the start and end to force a full-length export: `[64, 66]`. |
 
 Export rules, or nothing lines up: the three files come from the **same
 project at the same tempo**, and all three **start at the project start** (bar

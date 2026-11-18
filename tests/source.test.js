@@ -74,3 +74,9 @@ test("an expired token gives the friend a sentence they can act on", async () =>
   try { await assert.rejects(Source.tree(config), /expired or was revoked/); }
   finally { delete globalThis.fetch; }
 });
+
+test("songs.json can give a tempo and marker notes to drop", () => {
+  const [song] = Source.readManifest(JSON.stringify({ songs: [{ midi: "a/bass.mid", bpm: 128, ignoreNotes: [64, "x", 66] }] }));
+  assert.strictEqual(song.bpm, 128);
+  assert.deepStrictEqual(song.ignoreNotes, [64, 66]);
+});
