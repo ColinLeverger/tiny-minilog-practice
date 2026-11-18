@@ -23,10 +23,10 @@
     <label class="check"><input type="checkbox" id="guide"> Guide bass</label>
     <button type="button" id="fullscreen">Full screen</button>
     <button type="button" id="install">Install</button>
-    <button type="button" id="settings-open" aria-label="Settings">Settings</button>
+    <button type="button" id="settings-open" aria-label="Settings"><span class="wide">Settings</span><span class="narrow" aria-hidden="true">⚙</span></button>
   </header>
 
-  <p class="rotate-tip">Turn your tablet sideways for bigger keys. You can still play this way.</p>
+  <p class="rotate-tip">Turn your <span class="wide">tablet</span><span class="narrow">phone</span> sideways for bigger keys. You can still play this way.</p>
   <main>
     <canvas id="stage" aria-label="Keyboard with the notes to play"></canvas>
     <p id="status" role="status" hidden></p>
@@ -87,7 +87,7 @@
         </fieldset>
 
         <fieldset id="install-help">
-          <legend>Keep it on this tablet</legend>
+          <legend id="install-legend">Keep it on this tablet</legend>
           <p id="install-message" role="status">In Chrome, tap the three-dot menu (⋮) → Add to home screen → Install. If Chrome offers Create shortcut instead, use it, then tap Full screen here when you play.</p>
           <p class="hint">Next time, open the TinyPiano icon on your home screen. An installed app opens without browser bars.</p>
         </fieldset>

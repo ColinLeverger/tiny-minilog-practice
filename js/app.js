@@ -338,6 +338,13 @@
 
   function bindInstall(openSettings) {
     var prompt = null;
+    var nav = typeof navigator !== "undefined" ? navigator : {};
+    // iPhone and iPad: Safari has no install prompt and no full screen for pages.
+    if (/iPhone|iPad|iPod/.test(nav.userAgent || "") || (/Macintosh/.test(nav.userAgent || "") && nav.maxTouchPoints > 1)) {
+      $("install-legend").textContent = "Keep it on this device";
+      $("install-message").textContent = "In Safari, tap Share (the square with an arrow) → Add to Home Screen. The icon then opens without browser bars.";
+      $("fullscreen").hidden = true;
+    }
     function showInstalled() {
       prompt = null;
       $("install").textContent = "Installed";
