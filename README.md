@@ -1,7 +1,7 @@
 # Tiny Piano Rehearsal
 
-Press play, follow the lit keys. A bass line for a 37-key synth (Korg
-Minilogue), shown as falling notes over a drawing of the keyboard and kept in
+Press play, follow the lit keys. A bass line for a 25-key synth (Korg
+Monologue, E to E), shown as falling notes over a drawing of the keyboard and kept in
 sync with the song. No sheet music, no theory.
 
 Static site, no build step, no server. Songs live in a separate **private**
@@ -15,7 +15,7 @@ GitHub repository and are read with a read-only token carried in the link.
 - **Falling notes**: a bar reaches the keyboard when the key must go down, and
   its length is how long to hold it. Faint lines are beats, strong lines bars.
 - **Colours**: teal = white key, violet = black key, amber = the note is
-  outside the 37 keys and was moved by octaves so there is still a key to press.
+  outside the 25 keys and was moved by octaves so there is still a key to press.
 - **A / B / Loop off**: repeat a passage. **−5 s** and **Start** to go back.
 - **Settings**: latency (for Bluetooth headphones), volumes, seconds shown
   ahead, moving the notes one octave left or right, full screen.
@@ -80,8 +80,8 @@ code sits in the fragment because a fragment is never sent to a server;
 
 ## Which octave on the synth
 
-The app chooses the three octaves that hold the most notes and puts the lowest
-ones at the left. Which octave *sounds* right depends on the synth's OCTAVE
+The app chooses the two octaves (E to E) that hold the most notes and puts the
+lowest ones at the left. Which octave *sounds* right depends on the synth's OCTAVE
 switch and on the patch, so set those by ear against the "With bass" recording.
 *Settings → Move notes on the keyboard* shifts the picture when the line is
 more comfortable an octave to the right.
@@ -103,7 +103,7 @@ way to check an export before pushing it.
 | File | Role |
 | --- | --- |
 | `js/midi.js` | MIDI file → notes in seconds (tempo map, beats). |
-| `js/layout.js` | The 37 keys, and where a note lands on them. |
+| `js/layout.js` | The 25 keys, and where a note lands on them. |
 | `js/source.js` | Link code, GitHub reads, on-device cache keyed by content hash. |
 | `js/engine.js` | Web Audio transport: recording, guide bass, loop, one clock. |
 | `js/app.js` | Controls and the canvas. |

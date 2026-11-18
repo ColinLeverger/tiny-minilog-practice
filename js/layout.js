@@ -1,21 +1,21 @@
-/* Keyboard geometry for a 37-key C-to-C keyboard (Korg Minilogue), and the
+/* Keyboard geometry for a 25-key E-to-E keyboard (Korg Monologue), and the
  * rule that places a song's notes on it. */
 (function (root) {
   "use strict";
-  var KEYS = 37;
+  var KEYS = 25, FIRST = 4; // 25 keys, the lowest is an E
   var BLACK = { 1: true, 3: true, 6: true, 8: true, 10: true };
 
   function isBlack(midi) { return !!BLACK[((midi % 12) + 12) % 12]; }
 
-  /* Lowest key (always a C) of the 3-octave window that holds the most notes.
+  /* Lowest key (always an E) of the two-octave window that holds the most notes.
    * On a tie, the window that starts in the octave of the lowest note wins, so
    * a bass line sits at the left of the keyboard. */
   function pickLow(notes) {
-    if (!notes.length) return 36;
+    if (!notes.length) return 28;
     var min = Infinity;
     notes.forEach(function (n) { if (n.midi < min) min = n.midi; });
-    var best = 0, bestCount = -1;
-    for (var low = 0; low <= 96; low += 12) {
+    var best = FIRST, bestCount = -1;
+    for (var low = FIRST; low <= 100; low += 12) {
       var count = 0;
       for (var i = 0; i < notes.length; i++) if (notes[i].midi >= low && notes[i].midi < low + KEYS) count++;
       if (count > bestCount || (count === bestCount && low <= min)) { best = low; bestCount = count; }
@@ -46,7 +46,7 @@
     return out;
   }
 
-  var api = { KEYS: KEYS, isBlack: isBlack, pickLow: pickLow, place: place, keys: keys };
+  var api = { KEYS: KEYS, FIRST: FIRST, isBlack: isBlack, pickLow: pickLow, place: place, keys: keys };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.TprLayout = api;
 })(typeof window !== "undefined" ? window : globalThis);

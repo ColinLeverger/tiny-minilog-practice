@@ -13,7 +13,7 @@
   function savePrefs() { try { localStorage.setItem(PREFS_KEY, JSON.stringify(prefs)); } catch (_) { /* private mode */ } }
 
   var engine = window.TprEngine.create({ onEnd: function () { releaseWake(); syncTransport(); } });
-  var config = null, files = {}, songs = [], song = null, parsed = null, low = 36, mode = "silent";
+  var config = null, files = {}, songs = [], song = null, parsed = null, low = 28, mode = "silent";
   var loadId = 0, loopA = null, wake = null, seeking = false;
 
   /* ---------- status ---------- */
@@ -138,7 +138,7 @@
   function shiftOf() { return (song && prefs.shift[song.id]) || 0; }
   function placeNotes() {
     if (!parsed) return;
-    low = Math.max(0, Math.min(96, Layout.pickLow(parsed.notes) - 12 * shiftOf()));
+    low = Math.max(Layout.FIRST, Math.min(100, Layout.pickLow(parsed.notes) - 12 * shiftOf()));
     $("shift-out").textContent = shiftOf() > 0 ? "+" + shiftOf() : String(shiftOf());
   }
 
