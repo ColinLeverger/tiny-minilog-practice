@@ -70,4 +70,7 @@ legend { color: var(--muted); padding: 0 6px; }
 .sheet input[type="range"] { flex: 1; height: 36px; accent-color: var(--accent); }
 .row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 output { min-width: 64px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.setup { border-top: 1px solid var(--line); padding-top: 4px; }
+.setup summary { min-height: 44px; display: flex; align-items: center; color: var(--muted); cursor: pointer; }
+.setup[open] { display: flex; flex-direction: column; gap: 12px; }
 .hint { margin: 0; color: var(--muted); font-size: 14px; }

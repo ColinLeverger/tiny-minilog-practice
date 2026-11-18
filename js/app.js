@@ -270,6 +270,7 @@
       $("src-branch").value = saved ? saved.branch : "main";
       $("src-token").value = saved ? saved.token : "";
       $("src-link").hidden = true; $("src-message").textContent = "";
+      $("setup").open = false; // setup stays folded away for the player
       $("settings").showModal();
     });
     function moveNotes(by) {

@@ -21,8 +21,9 @@ GitHub repository and are read with a read-only token carried in the link.
   second or two the first time and adds some blur at low speeds), so the synth
   stays in tune with it. Guide bass, falling notes and loop follow.
 - **A / B / Loop off**: repeat a passage. **−5 s** and **Start** to go back.
-- **Settings**: latency (for Bluetooth headphones), volumes, seconds shown
-  ahead, moving the notes one octave left or right, full screen.
+- **Settings**: volumes, moving the notes one octave left or right, how far
+  ahead notes show, full screen, and timing (for Bluetooth headphones). Loading
+  files and the song library sit folded under *Setup (adding songs)*.
 
 The page works offline after each song was opened once online.
 
@@ -69,7 +70,7 @@ change on its next load.
 2. Create a fine-grained personal access token limited to **that repository
    only**, with **Repository permissions → Contents: Read-only**, and an expiry
    date.
-3. In the app: *Settings → Song library*, enter `owner/repository`, the branch
+3. In the app: *Settings → Setup → Song library*, enter `owner/repository`, the branch
    and the token, then **Copy link for a friend**.
 
 The link ends in `#k=…`: the repository, branch and token, encoded. Opening it
@@ -87,7 +88,7 @@ code sits in the fragment because a fragment is never sent to a server;
 The app chooses the two octaves (E to E) that hold the most notes and puts the
 lowest ones at the left. Which octave *sounds* right depends on the synth's OCTAVE
 switch and on the patch, so set those by ear against the "With bass" recording.
-*Settings → Move notes on the keyboard* shifts the picture when the line is
+*Settings → Notes left / Notes right* shifts the picture when the line is
 more comfortable an octave to the right.
 
 ## Development
@@ -100,7 +101,7 @@ make check    # tests (memory-capped), the gate CI runs
 make down
 ```
 
-With no link, the app opens on a built-in demo. *Settings → Try files from this
+With no link, the app opens on a built-in demo. *Settings → Setup → Try files from this
 device* loads a MIDI and two audio files straight from disk, which is the quick
 way to check an export before pushing it.
 
