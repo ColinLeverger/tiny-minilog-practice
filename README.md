@@ -55,8 +55,9 @@ GitHub repository and are read with a read-only token carried in the link.
   files and the song library sit folded under *Setup (adding songs)*.
 
 **Language**: the page is in French when the browser's first language is
-French, in English otherwise. `?lang=fr` or `?lang=en` in the address forces
-one. Every sentence lives in `js/i18n.js`; a test fails when a text of the
+French, in English otherwise. *Settings → Volume → English / Français*
+switches by hand and is remembered on the device; `?lang=fr` or `?lang=en` in
+the address overrides both. Every sentence lives in `js/i18n.js`; a test fails when a text of the
 page or a message of the code has no French version.
 
 **Offline**: once the song list loads with a network, the app downloads every

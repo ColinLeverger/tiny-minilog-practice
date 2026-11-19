@@ -12,6 +12,11 @@ test("the browser's first language decides, and ?lang= forces one", () => {
   assert.equal(I18n.pick([undefined], "https://x/"), "en");
   assert.equal(I18n.pick(["en"], "https://x/?lang=fr"), "fr");
   assert.equal(I18n.pick(["fr"], "https://x/#v=bass&lang=en"), "en");
+  // the Settings choice beats the browser, the address beats both
+  assert.equal(I18n.pick(["fr-FR"], "https://x/", "en"), "en");
+  assert.equal(I18n.pick(["en-US"], "https://x/", "fr"), "fr");
+  assert.equal(I18n.pick(["en-US"], "https://x/?lang=en", "fr"), "en");
+  assert.equal(I18n.pick(["fr-FR"], "https://x/", "garbage"), "fr");
 });
 
 test("English stays English; French replaces whole sentences and fills templates", () => {
@@ -43,7 +48,8 @@ test("every text of the page has a French version", () => {
     .concat([...body.matchAll(/(?:aria-label|placeholder)="([^"]+)"/g)].map((m) => m[1]))
     .map((s) => s.replace(/&amp;/g, "&"))
     .filter((s) => /[a-z]{2}/i.test(s) && s !== "main"); // the branch placeholder is a branch name
-  const same = ["Volume", "Position", "Pause"]; // spelled the same in French
+  const same = ["Volume", "Position", "Pause", // spelled the same in French
+    "English", "Français", "Language / Langue"]; // the language switch reads the same in both
   const missing = [...new Set(texts)].filter((s) => fr.t(s) === s && !same.includes(s));
   assert.deepEqual(missing, []);
 });

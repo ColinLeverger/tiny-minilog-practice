@@ -351,6 +351,11 @@
     function setHighway(on) { prefs.highway = on; savePrefs(); syncView(); }
     $("fall-show").addEventListener("click", function () { setHighway(true); });
     $("fall-hide").addEventListener("click", function () { setHighway(false); });
+    $("lang-en").setAttribute("aria-pressed", String(I18n.lang === "en"));
+    $("lang-fr").setAttribute("aria-pressed", String(I18n.lang === "fr"));
+    ["en", "fr"].forEach(function (lang) {
+      $("lang-" + lang).addEventListener("click", function () { if (lang !== I18n.lang) I18n.choose(lang); });
+    });
     function setDots(on) { prefs.dots = on; savePrefs(); syncView(); }
     $("dots-show").addEventListener("click", function () { setDots(true); });
     $("dots-hide").addEventListener("click", function () { setDots(false); });

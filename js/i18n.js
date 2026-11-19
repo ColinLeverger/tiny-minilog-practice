@@ -2,7 +2,8 @@
  * sentence is the key: the code keeps writing English, and every text on its
  * way to the screen goes through t(). Sentences with a variable part (a file
  * name, a count) are templates: {0}, {1} stand for the variable parts.
- * ?lang=fr or ?lang=en in the address forces a language. */
+ * Order: ?lang=fr|en in the address, then the choice made in Settings
+ * (kept on the device), then the browser's first language. */
 (function (root) {
   "use strict";
   var FR = {
@@ -47,7 +48,7 @@
     "Show": "Afficher",
     "Keyboard": "Clavier",
     "Bass neck": "Manche de basse",
-    "Falling notes": "Notes qui tombent",
+    "Falling notes": "Chute de notes",
     "Lights only": "Lumières seules",
     "Dots on the notes of the key": "Points sur les notes de la tonalité",
     "Key dots": "Avec points",
@@ -145,9 +146,11 @@
     return { re: new RegExp("^" + escape(k).replace(/\\\{\d\\\}/g, "([\\s\\S]*?)") + "$"), fr: FR[k] };
   });
 
-  function pick(languages, href) {
+  var STORE = "tpr_lang_v1";
+  function pick(languages, href, chosen) {
     var forced = /[?&#]lang=(fr|en)\b/.exec(href || "");
     if (forced) return forced[1];
+    if (chosen === "fr" || chosen === "en") return chosen;
     var first = (languages && languages[0]) || "";
     return /^fr\b/i.test(first) ? "fr" : "en";
   }
@@ -186,8 +189,20 @@
     return { lang: lang, t: t, keyName: keyName, tonicName: tonicName, page: page };
   }
 
-  var nav = root.navigator || {};
-  var api = create(pick(nav.languages && nav.languages.length ? nav.languages : [nav.language], root.location && root.location.href));
+  var nav = root.navigator || {}, chosen = null;
+  try { chosen = root.localStorage && root.localStorage.getItem(STORE); } catch (_) { /* private mode */ }
+  var api = create(pick(nav.languages && nav.languages.length ? nav.languages : [nav.language], root.location && root.location.href, chosen));
+  /* The Settings switch: keep the choice, and reload so every text is drawn
+   * in the new language. A ?lang= in the address would override it, so it
+   * goes. */
+  api.choose = function (lang) {
+    try { root.localStorage.setItem(STORE, lang); } catch (_) { /* private mode: this visit only */ }
+    var url = new URL(root.location.href);
+    url.searchParams.delete("lang");
+    url.hash = url.hash.replace(/([#&])lang=(fr|en)&?/, "$1").replace(/[#&]$/, "");
+    root.location.replace(url.toString());
+    if (url.toString() === root.location.href) root.location.reload();
+  };
   api.create = create; api.pick = pick; api.FR = FR;
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.TprI18n = api;
