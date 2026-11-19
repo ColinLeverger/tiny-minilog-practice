@@ -44,8 +44,10 @@ GitHub repository and are read with a read-only token carried in the link.
 - **Key dots** (*Settings → Screen*): a small dot on every key, and every
   string and fret, that belongs to the song's key, so the player can try
   other notes that fit without following the line. The ringed dot is the home
-  note. The app works the key out from the bass line (longer notes count
-  more); `key` in songs.json overrides it when it guesses wrong. The key's
+  note. The app works the key out from the bass line: longer notes count
+  more, and the key must hold every note the line plays three times or more,
+  so a short note that keeps coming back still gets its dot. `key` in
+  songs.json overrides it when it guesses wrong. The key's
   name shows in Settings and at the top of the picture.
 - **A / B / Loop off**: repeat a passage. **−5 s** and **Start** to go back.
 - **Settings**: volumes, moving the notes one octave left or right, how far

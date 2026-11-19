@@ -29,15 +29,32 @@
     return da && db ? num / Math.sqrt(da * db) : 0;
   }
 
+  var REGULAR = 3; // a note played this many times belongs to the key
+
   /* Best-matching key for notes [{ midi, start, end }]. Each note counts by
-   * how long it sounds, so a held root weighs more than a passing note. */
+   * how long it sounds, so a held root weighs more than a passing note.
+   * Only keys that hold every note the line plays regularly are considered:
+   * the dots must never skip a note the player hears again and again, even
+   * when it is short (REBEL: four short F# among long As and Es read as
+   * A minor, which has no F#). A note played once or twice is a passing note
+   * and does not count; when no key holds them all, every key competes. */
   function detect(notes) {
-    var weight = new Array(12).fill(0);
-    (notes || []).forEach(function (n) { weight[pc(n.midi)] += Math.max(0.05, (n.end - n.start) || 0); });
+    var weight = new Array(12).fill(0), count = new Array(12).fill(0);
+    (notes || []).forEach(function (n) {
+      weight[pc(n.midi)] += Math.max(0.05, (n.end - n.start) || 0);
+      count[pc(n.midi)]++;
+    });
     if (!weight.some(Boolean)) return null;
+    function holdsAll(tonic, minor) {
+      var scale = make(tonic, minor).scale;
+      return count.every(function (c, p) { return c < REGULAR || scale.indexOf(p) >= 0; });
+    }
+    var strict = false;
+    for (var t = 0; t < 12 && !strict; t++) strict = holdsAll(t, false) || holdsAll(t, true);
     var best = null;
     for (var tonic = 0; tonic < 12; tonic++) {
       ["major", "minor"].forEach(function (kind) {
+        if (strict && !holdsAll(tonic, kind === "minor")) return;
         var rotated = weight.slice(tonic).concat(weight.slice(0, tonic));
         var score = correlation(rotated, PROFILE[kind]);
         if (!best || score > best.score) best = { tonic: tonic, minor: kind === "minor", score: score };

@@ -26,6 +26,27 @@ test("a held note weighs more than a passing one", () => {
   assert.equal(Theory.detect(notes).name, "A major");
 });
 
+test("a short note played again and again is in the key, even against long notes", () => {
+  // REBEL's shape: long As and Es, C D G B around them, and four short F#s.
+  // By time alone that reads A minor, which has F and no F#: the dots would
+  // skip a note the bass plays. The line fits E minor.
+  const notes = [];
+  let t = 0;
+  const add = (midi, length, times) => { for (let i = 0; i < times; i++) { notes.push({ midi, start: t, end: t + length }); t += length; } };
+  add(33, 0.8, 20); add(40, 0.2, 74); add(35, 0.17, 38); add(36, 0.27, 24); add(43, 0.16, 14); add(38, 0.15, 12); add(42, 0.22, 4);
+  const key = Theory.detect(notes);
+  assert.equal(key.name, "E minor");
+  assert.ok(Theory.inKey(key, 42), "F# gets a dot");
+  assert.ok(!Theory.inKey(key, 41), "F, never played, gets none");
+});
+
+test("a note played once or twice does not change the key", () => {
+  // C major without F, so G major would also hold every note if the two
+  // F# passing notes counted.
+  const notes = line([36, 40, 43, 36, 45, 43, 47, 36, 43, 40, 36, 38, 36, 42, 42]);
+  assert.equal(Theory.detect(notes).name, "C major");
+});
+
 test("no notes, no key", () => {
   assert.equal(Theory.detect([]), null);
 });
