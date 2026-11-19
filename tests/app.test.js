@@ -18,7 +18,7 @@ function ui(standalone = false, options = {}) {
     };
   }
   const elements = Object.fromEntries([...fs.readFileSync("index.html", "utf8").matchAll(/id="([^"]+)"/g)].map(m => [m[1], element()]));
-  const body = element(), events = {};
+  const body = element(), events = {}, docEvents = {};
   const engine = {
     pause() {}, setSong() {}, setBuffer() {}, setGuide() {}, setMixVolume() {}, setGuideVolume() {},
     isPlaying() { return false; }, duration() { return 20; }, getLoop() { return null; },
@@ -34,13 +34,13 @@ function ui(standalone = false, options = {}) {
   vm.runInNewContext(fs.readFileSync("js/app.js", "utf8"), {
     window, document: {
       getElementById(id) { return elements[id]; }, querySelector() { return body; },
-      querySelectorAll(selector) { return selector === ".modes button" ? options.modes || [] : []; }, createElement: element, addEventListener() {}, documentElement: {}
+      querySelectorAll(selector) { return selector === ".modes button" ? options.modes || [] : []; }, createElement: element, addEventListener(name, fn) { docEvents[name] = fn; }, documentElement: {}
     },
     localStorage: { getItem() { return null; }, setItem() {} },
     location: { href: "http://localhost/", protocol: "http:", hostname: "localhost" },
     navigator: {}, requestAnimationFrame() {}, setTimeout, clearTimeout
   });
-  return { elements, events, body };
+  return { elements, events, body, docEvents };
 }
 
 test("Install without a browser prompt opens reachable menu instructions", async () => {
@@ -114,6 +114,33 @@ test("the octave buttons grey out at ±2 instead of silently doing nothing", asy
   assert.equal(elements["shift-out"].textContent, "-2");
   assert.equal(down.disabled, true, "Lower must be disabled at -2");
   assert.equal(up.disabled, false);
+});
+
+test("Space plays and pauses even when another control has the focus", async () => {
+  let plays = 0;
+  const { elements, docEvents } = ui(false, { engine: { play: async () => { plays++; } } });
+  await new Promise(setImmediate);
+  const press = (target, extra = {}) => {
+    const key = { code: "Space", target, prevented: false, preventDefault() { this.prevented = true; }, ...extra };
+    const up = { ...key, prevented: false };
+    docEvents.keydown(key); if (docEvents.keyup) docEvents.keyup(up);
+    return { down: key.prevented, up: up.prevented };
+  };
+  for (const target of [{ tagName: "BODY" }, { tagName: "BUTTON" }, { tagName: "INPUT", type: "checkbox" }, { tagName: "INPUT", type: "range" }, { tagName: "SELECT" }]) {
+    const before = plays;
+    assert.deepEqual(press(target), { down: true, up: true }, "the focused control must not also get the Space: " + target.tagName);
+    await new Promise(setImmediate);
+    assert.equal(plays, before + 1, "Space must start playback from " + target.tagName + " " + (target.type || ""));
+  }
+  const held = plays;
+  press({ tagName: "BUTTON" }, { repeat: true });
+  await new Promise(setImmediate);
+  assert.equal(plays, held, "a held Space key must not toggle again and again");
+  // typing in a text field, or anything in Settings, keeps its own Space
+  assert.deepEqual(press({ tagName: "INPUT", type: "text" }), { down: false, up: false });
+  elements.settings.open = true;
+  assert.deepEqual(press({ tagName: "BUTTON" }), { down: false, up: false });
+  assert.equal(plays, held);
 });
 
 /* ---------- speed ---------- */

@@ -292,9 +292,21 @@
     });
     $("loop-clear").addEventListener("click", function () { loopA = null; engine.setLoop(null, null); syncTransport(); });
 
+    /* Space is Play / Pause wherever the focus is, so a tap on another
+     * control first (Guide bass, −, a mode) does not steal it: the browser
+     * would otherwise press that control again. Only Settings and text fields
+     * keep their own Space. A button acts on keyup, so that is cancelled too. */
+    function spaceIsPlay(event) {
+      if (event.code !== "Space" || $("settings").open) return false;
+      var el = event.target || {};
+      return !(el.tagName === "TEXTAREA" || (el.tagName === "INPUT" && /^(text|password|search|email|url|number)$/.test(el.type)));
+    }
     document.addEventListener("keydown", function (event) {
-      if (event.code === "Space" && !$("settings").open && !/^(INPUT|SELECT|BUTTON)$/.test(event.target.tagName)) { event.preventDefault(); toggle(); }
+      if (!spaceIsPlay(event)) return;
+      event.preventDefault();
+      if (!event.repeat) toggle();
     });
+    document.addEventListener("keyup", function (event) { if (spaceIsPlay(event)) event.preventDefault(); });
     document.addEventListener("visibilitychange", function () {
       if (document.visibilityState === "visible" && engine.isPlaying()) requestWake();
     });
