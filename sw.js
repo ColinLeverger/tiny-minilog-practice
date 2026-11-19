@@ -8,6 +8,7 @@ var SHELL = [
   "./",
   "index.html",
   "css/styles.css",
+  "js/i18n.js",
   "js/midi.js",
   "js/layout.js",
   "js/fretboard.js",

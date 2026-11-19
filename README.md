@@ -54,6 +54,11 @@ GitHub repository and are read with a read-only token carried in the link.
   ahead notes show, full screen, and timing (for Bluetooth headphones). Loading
   files and the song library sit folded under *Setup (adding songs)*.
 
+**Language**: the page is in French when the browser's first language is
+French, in English otherwise. `?lang=fr` or `?lang=en` in the address forces
+one. Every sentence lives in `js/i18n.js`; a test fails when a text of the
+page or a message of the code has no French version.
+
 **Offline**: once the song list loads with a network, the app downloads every
 song of the library in the background (*Settings* shows the progress), so the
 next rehearsal needs no network at all, including songs never opened. Files
@@ -152,6 +157,7 @@ way to check an export before pushing it.
 | `js/midi.js` | MIDI file → notes in seconds (tempo map, beats). |
 | `js/fretboard.js` | Bass neck: tunings, and the easiest place to play each note. |
 | `js/layout.js` | The 25 keys, and where a note lands on them. |
+| `js/i18n.js` | French texts, chosen from the browser language. |
 | `js/theory.js` | The song's key, from its notes or from songs.json. |
 | `js/source.js` | Link code, GitHub reads, on-device cache keyed by content hash, saving the whole library for offline use. |
 | `js/stretch.js` | Slows a recording down without changing its pitch. |

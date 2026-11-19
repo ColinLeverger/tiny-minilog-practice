@@ -1,7 +1,7 @@
 /* UI glue: song list, modes, transport, and the falling-notes picture. */
 (function () {
   "use strict";
-  var Midi = window.TprMidi, Layout = window.TprLayout, Fret = window.TprFretboard, Source = window.TprSource, Stretch = window.TprStretch, Theory = window.TprTheory;
+  var Midi = window.TprMidi, Layout = window.TprLayout, Fret = window.TprFretboard, Source = window.TprSource, Stretch = window.TprStretch, Theory = window.TprTheory, I18n = window.TprI18n, t = I18n.t;
   var PREFS_KEY = "tpr_prefs_v1";
   var COLORS = { white: "#35d0c3", black: "#b48cff", folded: "#e0a030", touch: "#6fb6ff" };
 
@@ -20,7 +20,7 @@
   /* ---------- status ---------- */
   function status(text, isError) {
     var el = $("status");
-    el.hidden = !text; el.textContent = text || "";
+    el.hidden = !text; el.textContent = t(text) || "";
     el.classList.toggle("error", !!isError);
   }
   function clock(seconds) {
@@ -58,7 +58,7 @@
     songs.forEach(function (item) {
       var option = document.createElement("option");
       option.value = item.id;
-      option.textContent = item.artist ? item.title + " — " + item.artist : item.title;
+      option.textContent = item.artist ? item.title + " — " + item.artist : item.demo ? t(item.title) : item.title;
       select.appendChild(option);
     });
     if (song) select.value = song.id;
@@ -76,7 +76,7 @@
       fillSongs();
       await openSong(songs.filter(function (s) { return s.id === prefs.song; })[0] || songs[0]);
       if (!tree.offline) saveAll();
-      else $("offline-out").textContent = "No network: playing what is already on this device.";
+      else $("offline-out").textContent = t("No network: playing what is already on this device.");
     } catch (error) {
       songs = [DEMO]; fillSongs();
       await openSong(DEMO);
@@ -89,15 +89,15 @@
   var saving = null;
   function saveAll() {
     var out = $("offline-out"), mine = config, list = songs;
-    out.textContent = "Saving songs on this device…";
+    out.textContent = t("Saving songs on this device…");
     saving = Source.preload(config, files, songs, function (state) {
-      if (config === mine) out.textContent = "Saving songs on this device: " + state.done + " of " + state.total + " files…";
+      if (config === mine) out.textContent = t("Saving songs on this device: " + state.done + " of " + state.total + " files…");
     }).then(function (state) {
       if (config !== mine) return;
-      out.textContent = state.failed
+      out.textContent = t(state.failed
         ? state.done + " of " + state.total + " files saved. The others download when you open their song with a network."
-        : "All " + list.length + " songs are saved on this device and play with no network.";
-    }, function () { out.textContent = "Saving songs for offline use failed. Songs you open are still saved."; });
+        : "All " + list.length + " songs are saved on this device and play with no network.");
+    }, function () { out.textContent = t("Saving songs for offline use failed. Songs you open are still saved."); });
   }
 
   async function openSong(item) {
@@ -189,11 +189,11 @@
       await preparedFor(source, speed);
       // Superseded (other speed, mode or song): whoever changed it applies its own.
       if (source !== original || speed !== speedOf() || !ready()) {
-        if (!preparing && $("status").textContent === PREPARING) status("");
+        if (!preparing && $("status").textContent === t(PREPARING)) status("");
         return;
       }
     }
-    if ($("status").textContent === PREPARING) status("");
+    if ($("status").textContent === t(PREPARING)) status("");
     engine.setBuffer(speed === 1 || !source ? source : stretched.buffer, offset, speed);
   }
   function changeSpeed(by) {
@@ -223,7 +223,7 @@
 
   function syncKey() {
     $("key-out").textContent = songKey
-      ? "This song is in " + songKey.name + ". Dots mark the notes that fit it; the ringed dot is " + songKey.name.split(" ")[0] + ", the home note."
+      ? t("This song is in " + I18n.keyName(songKey) + ". Dots mark the notes that fit it; the ringed dot is " + I18n.tonicName(songKey) + ", the home note.")
       : "";
   }
 
@@ -236,11 +236,11 @@
     });
   }
   function syncTransport() {
-    $("play").textContent = engine.isPlaying() ? "Pause" : "Play";
+    $("play").textContent = t(engine.isPlaying() ? "Pause" : "Play");
     $("seek").max = String(Math.max(1, engine.duration()));
     var loop = engine.getLoop();
-    $("loop-a").textContent = loopA != null ? "A " + clock(loopA) : "Set A";
-    $("loop-b").textContent = loop ? "B " + clock(loop.b) : "Set B";
+    $("loop-a").textContent = loopA != null ? "A " + clock(loopA) : t("Set A");
+    $("loop-b").textContent = loop ? "B " + clock(loop.b) : t("Set B");
     $("loop-b").disabled = loopA == null;
     $("loop-clear").disabled = loopA == null && !loop;
   }
@@ -302,7 +302,7 @@
     function slider(id, key, apply, label) {
       var input = $(id), out = $(id + "-out");
       input.value = String(prefs[key]);
-      function show() { if (out) out.textContent = label(prefs[key]); }
+      function show() { if (out) out.textContent = t(label(prefs[key])); }
       input.addEventListener("input", function () { prefs[key] = Number(input.value); if (apply) apply(prefs[key]); show(); savePrefs(); });
       show(); if (apply) apply(prefs[key]);
     }
@@ -318,7 +318,7 @@
       $("src-repo").value = saved ? saved.repo : "";
       $("src-branch").value = saved ? saved.branch : "main";
       $("src-token").value = saved ? saved.token : "";
-      $("src-link").hidden = true; $("src-message").textContent = "";
+      $("src-link").hidden = true; $("src-message").textContent = t("");
       $("setup").open = false; // setup stays folded away for the player
       $("settings").showModal();
       document.querySelector(".sheet-body").scrollTop = 0;
@@ -340,7 +340,7 @@
       $("look-row").hidden = prefs.highway === false;
       $("dots-show").setAttribute("aria-pressed", String(prefs.dots !== false));
       $("dots-hide").setAttribute("aria-pressed", String(prefs.dots === false));
-      canvas.setAttribute("aria-label", prefs.view === "bass" ? "Bass neck with the notes to play" : "Keyboard with the notes to play");
+      canvas.setAttribute("aria-label", t(prefs.view === "bass" ? "Bass neck with the notes to play" : "Keyboard with the notes to play"));
     }
     function setView(view) {
       prefs.view = view;
@@ -356,7 +356,7 @@
     $("dots-hide").addEventListener("click", function () { setDots(false); });
     syncView();
     document.addEventListener("fullscreenchange", function () {
-      $("fullscreen").textContent = document.fullscreenElement ? "Exit full screen" : "Full screen";
+      $("fullscreen").textContent = t(document.fullscreenElement ? "Exit full screen" : "Full screen");
     });
     $("fullscreen").addEventListener("click", async function () {
       try {
@@ -365,14 +365,14 @@
         else throw new Error("Full screen is unavailable");
       } catch (_) {
         openSettings();
-        $("install-message").textContent = "Full screen is unavailable here. Use Chrome’s menu (⋮) → Add to home screen → Install, then open the TinyPiano icon.";
+        $("install-message").textContent = t("Full screen is unavailable here. Use Chrome’s menu (⋮) → Add to home screen → Install, then open the TinyPiano icon.");
         $("install-help").scrollIntoView({ block: "nearest" });
       }
     });
 
     $("file-load").addEventListener("click", function () {
       var midi = $("file-midi").files[0];
-      if (!midi) { $("src-message").textContent = "Choose at least the bass MIDI file."; return; }
+      if (!midi) { $("src-message").textContent = t("Choose at least the bass MIDI file."); return; }
       var item = {
         id: "local", title: midi.name.replace(/\.midi?$/i, "") + " (this device)",
         bpm: Number($("file-bpm").value) || null,
@@ -386,23 +386,23 @@
       return Source.clean({ repo: $("src-repo").value, branch: $("src-branch").value || "main", token: $("src-token").value });
     }
     $("src-save").addEventListener("click", function () {
-      try { config = typed(); Source.writeConfig(config); } catch (error) { $("src-message").textContent = error.message; return; }
+      try { config = typed(); Source.writeConfig(config); } catch (error) { $("src-message").textContent = t(error.message); return; }
       $("settings").close(); loadLibrary();
     });
     $("src-copy").addEventListener("click", function () {
       var link;
       try { link = location.origin + location.pathname + "#k=" + Source.encodeLink(typed()); }
-      catch (error) { $("src-message").textContent = error.message; return; }
+      catch (error) { $("src-message").textContent = t(error.message); return; }
       $("src-link").value = link; $("src-link").hidden = false; $("src-link").select();
       (navigator.clipboard ? navigator.clipboard.writeText(link) : Promise.reject()).then(
-        function () { $("src-message").textContent = "Link copied. Send it privately."; },
-        function () { $("src-message").textContent = "Copy the link above by hand."; });
+        function () { $("src-message").textContent = t("Link copied. Send it privately."); },
+        function () { $("src-message").textContent = t("Copy the link above by hand."); });
     });
     $("src-forget").addEventListener("click", function () {
-      Source.writeConfig(null); config = null; files = {}; $("offline-out").textContent = "";
+      Source.writeConfig(null); config = null; files = {}; $("offline-out").textContent = t("");
       if (window.caches) caches.delete("tpr-blobs-v1");
       $("src-repo").value = ""; $("src-token").value = "";
-      $("src-message").textContent = "Forgotten. Saved songs were removed from this device.";
+      $("src-message").textContent = t("Forgotten. Saved songs were removed from this device.");
       songs = [DEMO]; fillSongs(); openSong(DEMO);
     });
   }
@@ -412,15 +412,15 @@
     var nav = typeof navigator !== "undefined" ? navigator : {};
     // iPhone and iPad: Safari has no install prompt and no full screen for pages.
     if (/iPhone|iPad|iPod/.test(nav.userAgent || "") || (/Macintosh/.test(nav.userAgent || "") && nav.maxTouchPoints > 1)) {
-      $("install-legend").textContent = "Keep it on this device";
-      $("install-message").textContent = "In Safari, tap Share (the square with an arrow) → Add to Home Screen. The icon then opens without browser bars.";
+      $("install-legend").textContent = t("Keep it on this device");
+      $("install-message").textContent = t("In Safari, tap Share (the square with an arrow) → Add to Home Screen. The icon then opens without browser bars.");
       $("fullscreen").hidden = true;
     }
     function showInstalled() {
       prompt = null;
-      $("install").textContent = "Installed";
+      $("install").textContent = t("Installed");
       $("install").disabled = true;
-      $("install-message").textContent = "Ready on this tablet. Next time, tap the TinyPiano icon on your home screen.";
+      $("install-message").textContent = t("Ready on this tablet. Next time, tap the TinyPiano icon on your home screen.");
     }
     if (window.matchMedia("(display-mode: standalone)").matches) showInstalled();
     window.addEventListener("beforeinstallprompt", function (event) {
@@ -566,7 +566,7 @@
     if (!dotsOn() || stage().top < 28) return; // lights only: no room above the instrument
     g.fillStyle = "rgba(220,228,236,0.6)"; g.font = "600 14px system-ui, sans-serif";
     g.textAlign = "left"; g.textBaseline = "top";
-    g.fillText("Key: " + songKey.name + "  ·  dots = notes that fit", 10, 8);
+    g.fillText(t("Key: " + I18n.keyName(songKey) + "  ·  dots = notes that fit"), 10, 8);
   }
 
   function showTime() {
@@ -755,6 +755,7 @@
 
   /* ---------- start ---------- */
   function start() {
+    I18n.page(document);
     var found = Source.extractCode(location.href), linkError = null;
     var asked = (/[#?&]v=(bass|keys)(?:&|$)/.exec(location.href || "") || [])[1];
     if (asked) { prefs.view = asked; savePrefs(); } // a link can open straight on the bass neck
