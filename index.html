@@ -56,6 +56,10 @@
     <form method="dialog" class="sheet">
       <div class="sheet-head">
         <h2 id="settings-title">Settings</h2>
+        <div class="choice lang" role="group" aria-label="Language / Langue">
+          <button type="button" id="lang-en" lang="en" aria-label="English">EN</button>
+          <button type="button" id="lang-fr" lang="fr" aria-label="Français">FR</button>
+        </div>
         <button class="primary">Close</button>
       </div>
       <div class="sheet-body">
@@ -63,15 +67,11 @@
         <fieldset>
           <legend>Volume</legend>
           <label>Song <input type="range" id="mix-volume" min="0" max="1" step="0.05"></label>
-          <label>Guide bass <input type="range" id="guide-volume" min="0" max="1" step="0.05"></label>
+          <label>Guide bass (bass notes played by the app) <input type="range" id="guide-volume" min="0" max="1" step="0.05"></label>
           <label>Keys you touch <input type="range" id="play-volume" min="0" max="1" step="0.05"></label>
-          <div class="choice lang" role="group" aria-label="Language / Langue">
-            <button type="button" id="lang-en" lang="en">English</button>
-            <button type="button" id="lang-fr" lang="fr">Français</button>
-          </div>
         </fieldset>
 
-        <fieldset>
+        <fieldset id="screen-settings">
           <legend>Screen</legend>
           <div class="choice" role="group" aria-label="Show">
             <button type="button" id="view-keys">Keyboard</button>
@@ -98,9 +98,9 @@
           </label>
         </fieldset>
 
-        <fieldset>
+        <fieldset id="timing-settings">
           <legend>Timing</legend>
-          <label>Keys light up before you hear the note? Move right.
+          <label>Notes light up before you hear them? Move right.
             <span class="row"><input type="range" id="latency" min="-100" max="400" step="10"><output id="latency-out"></output></span>
           </label>
           <p class="hint">Bluetooth headphones usually need about 200 ms.</p>

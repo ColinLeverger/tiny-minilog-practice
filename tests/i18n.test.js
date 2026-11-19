@@ -49,7 +49,7 @@ test("every text of the page has a French version", () => {
     .map((s) => s.replace(/&amp;/g, "&"))
     .filter((s) => /[a-z]{2}/i.test(s) && s !== "main"); // the branch placeholder is a branch name
   const same = ["Volume", "Position", "Pause", // spelled the same in French
-    "English", "Français", "Language / Langue", "Octave"]; // the language switch reads the same in both
+    "English", "Français", "EN", "FR", "Language / Langue", "Octave"]; // the language switch reads the same in both
   const missing = [...new Set(texts)].filter((s) => fr.t(s) === s && !same.includes(s));
   assert.deepEqual(missing, []);
 });

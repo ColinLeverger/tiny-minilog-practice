@@ -50,12 +50,13 @@ GitHub repository and are read with a read-only token carried in the link.
   songs.json overrides it when it guesses wrong. The key's
   name shows in Settings and at the top of the picture.
 - **A / B / Loop off**: repeat a passage. **−5 s** and **Start** to go back.
-- **Settings**: volumes, moving the line one octave lower or higher, how far
-  ahead notes show, full screen, and timing (for Bluetooth headphones). Loading
+- **Settings**: language, volumes, moving the line one octave lower or
+  higher, how far ahead notes show, and timing (for Bluetooth headphones).
+  **Full screen** is a button on the main screen. Loading
   files and the song library sit folded under *Setup (adding songs)*.
 
 **Language**: the page is in French when the browser's first language is
-French, in English otherwise. *Settings → Volume → English / Français*
+French, in English otherwise. *EN / FR* at the top of Settings
 switches by hand and is remembered on the device; `?lang=fr` or `?lang=en` in
 the address overrides both. Every sentence lives in `js/i18n.js`; a test fails when a text of the
 page or a message of the code has no French version.

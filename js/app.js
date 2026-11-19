@@ -208,6 +208,7 @@
     $("faster").disabled = prefs.speedPct >= 100;
   }
 
+  var SHIFT_MAX = 2; // octaves the picture can move either way
   function shiftOf() { return (song && prefs.shift[song.id]) || 0; }
   var spots = [], frets = 12; // bass view: where each note is played, frets drawn
   function placeNotes() {
@@ -219,6 +220,9 @@
       frets = Fret.shownFrets(spots);
     }
     $("shift-out").textContent = shiftOf() > 0 ? "+" + shiftOf() : String(shiftOf());
+    // at the limit the button greys out instead of silently doing nothing
+    $("shift-down").disabled = shiftOf() <= -SHIFT_MAX;
+    $("shift-up").disabled = shiftOf() >= SHIFT_MAX;
   }
 
   function syncKey() {
@@ -327,7 +331,7 @@
     bindInstall(openSettings);
     function moveNotes(by) {
       if (!song) return;
-      prefs.shift[song.id] = Math.max(-2, Math.min(2, shiftOf() + by));
+      prefs.shift[song.id] = Math.max(-SHIFT_MAX, Math.min(SHIFT_MAX, shiftOf() + by));
       savePrefs(); placeNotes();
     }
     $("shift-down").addEventListener("click", function () { moveNotes(-1); });

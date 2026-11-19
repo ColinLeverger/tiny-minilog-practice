@@ -101,6 +101,21 @@ test("Loop end stays disabled until a loop start is set", async () => {
   assert.equal(elements["loop-b"].disabled, true);
 });
 
+test("the octave buttons grey out at ±2 instead of silently doing nothing", async () => {
+  const { elements } = ui();
+  await new Promise(setImmediate);
+  const up = elements["shift-up"], down = elements["shift-down"];
+  assert.equal(up.disabled, false);
+  up.listeners.click(); up.listeners.click();
+  assert.equal(elements["shift-out"].textContent, "+2");
+  assert.equal(up.disabled, true, "Higher must be disabled at +2");
+  assert.equal(down.disabled, false);
+  for (let i = 0; i < 4; i++) down.listeners.click();
+  assert.equal(elements["shift-out"].textContent, "-2");
+  assert.equal(down.disabled, true, "Lower must be disabled at -2");
+  assert.equal(up.disabled, false);
+});
+
 /* ---------- speed ---------- */
 const Stretch = require("../js/stretch.js");
 const RATE = 44100;
