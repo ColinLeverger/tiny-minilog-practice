@@ -28,7 +28,7 @@
 
   <p class="rotate-tip">Turn your <span class="wide">tablet</span><span class="narrow">phone</span> sideways for bigger keys. You can still play this way.</p>
   <main>
-    <canvas id="stage" aria-label="Keyboard with the notes to play"></canvas>
+    <canvas id="stage" aria-label="Keyboard with the notes to play. Touch a key to play it."></canvas>
     <p id="status" role="status" hidden></p>
   </main>
 
@@ -64,6 +64,7 @@
           <legend>Volume</legend>
           <label>Song <input type="range" id="mix-volume" min="0" max="1" step="0.05"></label>
           <label>Guide bass <input type="range" id="guide-volume" min="0" max="1" step="0.05"></label>
+          <label>Keys you touch <input type="range" id="play-volume" min="0" max="1" step="0.05"></label>
         </fieldset>
 
         <fieldset>
@@ -76,6 +77,11 @@
             <button type="button" id="fall-show">Falling notes</button>
             <button type="button" id="fall-hide">Lights only</button>
           </div>
+          <div class="choice" role="group" aria-label="Dots on the notes of the key">
+            <button type="button" id="dots-show">Key dots</button>
+            <button type="button" id="dots-hide">No dots</button>
+          </div>
+          <p id="key-out" class="hint"></p>
           <div class="row">
             <button type="button" id="shift-down">◀ Notes left</button>
             <output id="shift-out"></output>
@@ -98,6 +104,7 @@
           <legend id="install-legend">Keep it on this tablet</legend>
           <p id="install-message" role="status">In Chrome, tap the three-dot menu (⋮) → Add to home screen → Install. If Chrome offers Create shortcut instead, use it, then tap Full screen here when you play.</p>
           <p class="hint">Next time, open the TinyPiano icon on your home screen. An installed app opens without browser bars.</p>
+          <p id="offline-out" role="status"></p>
         </fieldset>
 
         <details id="setup" class="setup">
@@ -135,6 +142,7 @@
   <script src="js/midi.js"></script>
   <script src="js/layout.js"></script>
   <script src="js/fretboard.js"></script>
+  <script src="js/theory.js"></script>
   <script src="js/source.js"></script>
   <script src="js/stretch.js"></script>
   <script src="js/engine.js"></script>

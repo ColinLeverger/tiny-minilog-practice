@@ -120,6 +120,28 @@
     return buffer;
   }
 
+  /* Download every file the song list names, one at a time, so the whole
+   * library plays offline after one online visit. Files already on the device
+   * cost nothing. Asks the browser not to evict them under storage pressure.
+   * onProgress({ done, total, failed }) after each file. */
+  async function preload(config, files, songs, onProgress) {
+    try { if (root.navigator && root.navigator.storage && root.navigator.storage.persist) await root.navigator.storage.persist(); }
+    catch (_) { /* best effort: the cache still works without it */ }
+    var paths = [];
+    songs.forEach(function (song) {
+      ["midi", "backing", "full"].forEach(function (kind) {
+        if (song[kind] && files[song[kind]] && paths.indexOf(song[kind]) < 0) paths.push(song[kind]);
+      });
+    });
+    var state = { done: 0, total: paths.length, failed: 0 };
+    for (var i = 0; i < paths.length; i++) {
+      try { await file(config, files, paths[i]); state.done++; }
+      catch (error) { state.failed++; if (error.offline) break; }
+      if (onProgress) onProgress(state);
+    }
+    return state;
+  }
+
   /* Drop cached files that are no longer in the repository. */
   async function prune(files) {
     if (!root.caches) return;
@@ -155,7 +177,8 @@
         midiOffsetMs: Number(song.midiOffsetMs) || 0,
         track: Number.isInteger(song.track) ? song.track : null,
         bpm: Number(song.bpm) > 0 ? Number(song.bpm) : null,
-        ignoreNotes: Array.isArray(song.ignoreNotes) ? song.ignoreNotes.filter(Number.isInteger) : []
+        ignoreNotes: Array.isArray(song.ignoreNotes) ? song.ignoreNotes.filter(Number.isInteger) : [],
+        key: song.key ? String(song.key) : null
       };
     });
   }
@@ -163,7 +186,7 @@
   var api = {
     encodeLink: encodeLink, decodeLink: decodeLink, extractCode: extractCode,
     readConfig: readConfig, writeConfig: writeConfig, clean: clean,
-    tree: tree, file: file, prune: prune, readManifest: readManifest
+    tree: tree, file: file, preload: preload, prune: prune, readManifest: readManifest
   };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.TprSource = api;

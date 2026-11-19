@@ -22,10 +22,10 @@ function ui(standalone = false, options = {}) {
   const engine = {
     pause() {}, setSong() {}, setBuffer() {}, setGuide() {}, setMixVolume() {}, setGuideVolume() {},
     isPlaying() { return false; }, duration() { return 20; }, getLoop() { return null; },
-    position() { return 3; }, setLoop() {}, ...options.engine
+    position() { return 3; }, setLoop() {}, setPlayVolume() {}, ...options.engine
   };
   const window = {
-    TprMidi: options.midi || {}, TprStretch: options.stretch, TprLayout: { FIRST: 28, pickLow() { return 28; } },
+    TprMidi: options.midi || {}, TprStretch: options.stretch, TprTheory: require("../js/theory.js"), TprLayout: { FIRST: 28, pickLow() { return 28; } },
     TprSource: { extractCode() { return {}; }, readConfig() { return null; } },
     TprEngine: { create() { return engine; } },
     addEventListener(name, fn) { events[name] = fn; },

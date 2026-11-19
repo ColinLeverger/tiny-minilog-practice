@@ -35,12 +35,29 @@ GitHub repository and are read with a read-only token carried in the link.
 - **Falling notes / Lights only** (*Settings → Screen*): hide the falling
   notes, for keyboard and neck alike. The instrument then grows and only
   lights up, with a dashed outline on the next key or fret to press.
+- **Play it yourself**: touch a key, or a string at a fret on the bass neck,
+  and it sounds for as long as the finger stays down. Several fingers at once
+  work, and sliding a finger plays every key or fret it crosses. It works
+  stopped or along with the song, guide bass on or off. Touches on the falling
+  notes above the instrument do nothing. Its volume is *Settings → Volume →
+  Keys you touch*.
+- **Key dots** (*Settings → Screen*): a small dot on every key, and every
+  string and fret, that belongs to the song's key, so the player can try
+  other notes that fit without following the line. The ringed dot is the home
+  note. The app works the key out from the bass line (longer notes count
+  more); `key` in songs.json overrides it when it guesses wrong. The key's
+  name shows in Settings and at the top of the picture.
 - **A / B / Loop off**: repeat a passage. **−5 s** and **Start** to go back.
 - **Settings**: volumes, moving the notes one octave left or right, how far
   ahead notes show, full screen, and timing (for Bluetooth headphones). Loading
   files and the song library sit folded under *Setup (adding songs)*.
 
-The page works offline after each song was opened once online.
+**Offline**: once the song list loads with a network, the app downloads every
+song of the library in the background (*Settings* shows the progress), so the
+next rehearsal needs no network at all, including songs never opened. Files
+already on the device are not downloaded again; a song changed in the data
+repository is fetched anew on the next online visit. The app also asks the
+browser to keep these files when storage runs low.
 
 On an Android tablet, tap **Install** to add TinyPiano to the home screen. If
 Chrome does not offer the install prompt, the button shows instructions for
@@ -77,6 +94,7 @@ my-song/bass.mid      the bass line
 | `midiOffsetMs` | Shifts the notes instead, for a MIDI exported from the first note rather than from bar 1. |
 | `track` | Track number (from 0) when the MIDI holds more than the bass. |
 | `bpm` | Song tempo, used only when the MIDI file states none. Without it such a file is read at 120 and drifts. |
+| `key` | The song's key, for the key dots, when the app guesses it wrong: `"E minor"`, `"Em"`, `"F#"`, `"Bb major"`. |
 | `ignoreNotes` | MIDI note numbers to drop, e.g. marker notes placed at the start and end to force a full-length export: `[64, 66]`. |
 
 Export rules, or nothing lines up: the three files come from the **same
@@ -132,9 +150,10 @@ way to check an export before pushing it.
 | `js/midi.js` | MIDI file → notes in seconds (tempo map, beats). |
 | `js/fretboard.js` | Bass neck: tunings, and the easiest place to play each note. |
 | `js/layout.js` | The 25 keys, and where a note lands on them. |
-| `js/source.js` | Link code, GitHub reads, on-device cache keyed by content hash. |
+| `js/theory.js` | The song's key, from its notes or from songs.json. |
+| `js/source.js` | Link code, GitHub reads, on-device cache keyed by content hash, saving the whole library for offline use. |
 | `js/stretch.js` | Slows a recording down without changing its pitch. |
-| `js/engine.js` | Web Audio transport: recording, guide bass, loop, one clock. |
+| `js/engine.js` | Web Audio transport: recording, guide bass, loop, one clock; notes played by touch. |
 | `js/app.js` | Controls and the canvas. |
 | `sw.js` | Caches the app shell for offline use. |
 

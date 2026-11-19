@@ -185,3 +185,20 @@ test("starting in the middle of a note never schedules sound before the start", 
     assert.ok(first >= 0.06 - 1e-9, `seek ${at}: a guide note starts at ${first}, before playback begins at 0.06`);
   }
 });
+
+test("a touched key sounds until the finger lifts, guide bass on or off", (t) => {
+  const { ctx, log, engine } = rig(t);
+  engine.setGuide(false);
+  ctx.currentTime = 2;
+  const release = engine.press(28);
+  assert.strictEqual(log.voices.length, 3);
+  assert.ok(log.voices.every((o) => o.startAt === 2 && o.stopAt === Infinity), "held until released");
+  assert.ok(Math.abs(log.voices[0].frequency.value - 41.2034) < 0.001);
+  ctx.currentTime = 3.5;
+  release();
+  assert.ok(log.voices.every((o) => o.stopAt > 3.5 && o.stopAt < 4), "fades out right after release");
+  let stops = 0;
+  log.voices.forEach((o) => { const stop = o.stop; o.stop = function (when) { stops++; return stop.call(this, when); }; });
+  release(); // a second lift (pointerup then lostpointercapture) changes nothing: stop() twice throws in browsers
+  assert.strictEqual(stops, 0, "second release must not stop the oscillators again");
+});

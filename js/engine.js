@@ -13,11 +13,11 @@
 
   function create(options) {
     options = options || {};
-    var ctx = null, mixGain, guideGain, limiter;
+    var ctx = null, mixGain, guideGain, playGain, limiter;
     var notes = [], midiDuration = 0, buffer = null, bufferOffset = 0;
     var playing = false, startCtx = 0, startPos = 0, cursor = 0, timer = null;
     var source = null, voices = [], loop = null;
-    var guideOn = true, guideVolume = 0.8, mixVolume = 0.9;
+    var guideOn = true, guideVolume = 0.8, mixVolume = 0.9, playVolume = 0.8;
     var speed = 1; // song seconds per real second
 
     function context() {
@@ -29,6 +29,7 @@
       limiter.connect(ctx.destination);
       mixGain = ctx.createGain(); mixGain.gain.value = mixVolume; mixGain.connect(limiter);
       guideGain = ctx.createGain(); guideGain.gain.value = guideOn ? guideVolume : 0; guideGain.connect(limiter);
+      playGain = ctx.createGain(); playGain.gain.value = playVolume; playGain.connect(limiter);
       return ctx;
     }
 
@@ -104,6 +105,40 @@
         env.disconnect();
       };
     }
+    /* A note the player holds with a finger: same sound as the guide bass,
+     * sustained until release() is called. Its own volume, and it sounds
+     * whether the guide bass is on or off. */
+    function press(midi) {
+      context();
+      unmute();
+      if (ctx.state !== "running") ctx.resume();
+      var when = ctx.currentTime, f = frequency(midi), peak = 0.6;
+      var env = ctx.createGain();
+      env.gain.setValueAtTime(0, when);
+      env.gain.linearRampToValueAtTime(peak, when + 0.008);
+      env.gain.setTargetAtTime(peak * 0.7, when + 0.05, 0.4); // a plucked string fades a little
+      env.connect(playGain);
+      var lowpass = ctx.createBiquadFilter(), oscillators = [];
+      lowpass.type = "lowpass"; lowpass.frequency.value = 1400; lowpass.Q.value = 0.7;
+      [["sine", f, 0.9, null], ["sawtooth", f, 0.3, lowpass], ["sine", f * 2, 0.22, null]].forEach(function (p) {
+        var o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = p[0]; o.frequency.value = p[1]; g.gain.value = p[2];
+        if (p[3]) { o.connect(p[3]); p[3].connect(g); } else o.connect(g);
+        g.connect(env); o.start(when);
+        oscillators.push(o);
+      });
+      var released = false;
+      return function release() {
+        if (released) return;
+        released = true;
+        var now = ctx.currentTime;
+        env.gain.cancelScheduledValues(now);
+        env.gain.setTargetAtTime(0, now, 0.03);
+        oscillators.forEach(function (o) { o.stop(now + 0.25); });
+        oscillators[0].onended = function () { env.disconnect(); };
+      };
+    }
+
     function silence() {
       var now = ctx.currentTime;
       voices.forEach(function (v) {
@@ -204,6 +239,11 @@
       setGuideVolume: function (v) {
         guideVolume = v;
         if (ctx && guideOn) guideGain.gain.setTargetAtTime(v, ctx.currentTime, 0.02);
+      },
+      press: press,
+      setPlayVolume: function (v) {
+        playVolume = v;
+        if (ctx) playGain.gain.setTargetAtTime(v, ctx.currentTime, 0.02);
       },
       setMixVolume: function (v) {
         mixVolume = v;

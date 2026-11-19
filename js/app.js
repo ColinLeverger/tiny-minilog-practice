@@ -1,19 +1,19 @@
 /* UI glue: song list, modes, transport, and the falling-notes picture. */
 (function () {
   "use strict";
-  var Midi = window.TprMidi, Layout = window.TprLayout, Fret = window.TprFretboard, Source = window.TprSource, Stretch = window.TprStretch;
+  var Midi = window.TprMidi, Layout = window.TprLayout, Fret = window.TprFretboard, Source = window.TprSource, Stretch = window.TprStretch, Theory = window.TprTheory;
   var PREFS_KEY = "tpr_prefs_v1";
-  var COLORS = { white: "#35d0c3", black: "#b48cff", folded: "#e0a030" };
+  var COLORS = { white: "#35d0c3", black: "#b48cff", folded: "#e0a030", touch: "#6fb6ff" };
 
   function $(id) { return document.getElementById(id); }
 
   var prefs = Object.assign({
-    latencyMs: 0, speedPct: 100, view: "keys", highway: true, guide: true, guideVolume: 0.8, mixVolume: 0.9, look: 3, mode: "backing", song: null, shift: {}
+    latencyMs: 0, speedPct: 100, view: "keys", highway: true, dots: true, guide: true, guideVolume: 0.8, playVolume: 0.8, mixVolume: 0.9, look: 3, mode: "backing", song: null, shift: {}
   }, (function () { try { return JSON.parse(localStorage.getItem(PREFS_KEY)) || {}; } catch (_) { return {}; } })());
   function savePrefs() { try { localStorage.setItem(PREFS_KEY, JSON.stringify(prefs)); } catch (_) { /* private mode */ } }
 
   var engine = window.TprEngine.create({ onEnd: function () { releaseWake(); syncTransport(); } });
-  var config = null, files = {}, songs = [], song = null, parsed = null, low = 28, mode = "silent";
+  var config = null, files = {}, songs = [], song = null, parsed = null, low = 28, mode = "silent", songKey = null;
   var loadId = 0, loopA = null, wake = null, seeking = false;
   var original = null, stretched = null, speedTimer = null; // decoded recording, and its slowed copy
 
@@ -75,11 +75,29 @@
       if (!tree.offline) Source.prune(files).catch(function () { /* cache cleanup is best effort */ });
       fillSongs();
       await openSong(songs.filter(function (s) { return s.id === prefs.song; })[0] || songs[0]);
+      if (!tree.offline) saveAll();
+      else $("offline-out").textContent = "No network: playing what is already on this device.";
     } catch (error) {
       songs = [DEMO]; fillSongs();
       await openSong(DEMO);
       status(error.message, true);
     }
+  }
+
+  /* Put every song of the library on the device, in the background, so the
+   * next rehearsal works with no network at all. */
+  var saving = null;
+  function saveAll() {
+    var out = $("offline-out"), mine = config, list = songs;
+    out.textContent = "Saving songs on this device…";
+    saving = Source.preload(config, files, songs, function (state) {
+      if (config === mine) out.textContent = "Saving songs on this device: " + state.done + " of " + state.total + " files…";
+    }).then(function (state) {
+      if (config !== mine) return;
+      out.textContent = state.failed
+        ? state.done + " of " + state.total + " files saved. The others download when you open their song with a network."
+        : "All " + list.length + " songs are saved on this device and play with no network.";
+    }, function () { out.textContent = "Saving songs for offline use failed. Songs you open are still saved."; });
   }
 
   async function openSong(item) {
@@ -101,6 +119,8 @@
         result.beats = result.beats.map(function (b) { return { time: b.time + shift, bar: b.bar }; });
       }
       parsed = { notes: notes, beats: result.beats, duration: notes.reduce(function (m, n) { return Math.max(m, n.end); }, 0) };
+      songKey = (item.key && Theory.parse(item.key)) || Theory.detect(notes);
+      syncKey();
       engine.setSong(parsed);
       original = null; engine.setBuffer(null, 0, speedOf());
       placeNotes();
@@ -201,6 +221,12 @@
     $("shift-out").textContent = shiftOf() > 0 ? "+" + shiftOf() : String(shiftOf());
   }
 
+  function syncKey() {
+    $("key-out").textContent = songKey
+      ? "This song is in " + songKey.name + ". Dots mark the notes that fit it; the ringed dot is " + songKey.name.split(" ")[0] + ", the home note."
+      : "";
+  }
+
   /* ---------- controls ---------- */
   function syncModes() {
     document.querySelectorAll(".modes button").forEach(function (button) {
@@ -284,6 +310,7 @@
     slider("look", "look", null, function (v) { return v + " s"; });
     slider("mix-volume", "mixVolume", engine.setMixVolume);
     slider("guide-volume", "guideVolume", engine.setGuideVolume);
+    slider("play-volume", "playVolume", engine.setPlayVolume);
     engine.setGuide(prefs.guide);
 
     function openSettings() {
@@ -311,6 +338,8 @@
       $("fall-show").setAttribute("aria-pressed", String(prefs.highway !== false));
       $("fall-hide").setAttribute("aria-pressed", String(prefs.highway === false));
       $("look-row").hidden = prefs.highway === false;
+      $("dots-show").setAttribute("aria-pressed", String(prefs.dots !== false));
+      $("dots-hide").setAttribute("aria-pressed", String(prefs.dots === false));
       canvas.setAttribute("aria-label", prefs.view === "bass" ? "Bass neck with the notes to play" : "Keyboard with the notes to play");
     }
     function setView(view) {
@@ -322,6 +351,9 @@
     function setHighway(on) { prefs.highway = on; savePrefs(); syncView(); }
     $("fall-show").addEventListener("click", function () { setHighway(true); });
     $("fall-hide").addEventListener("click", function () { setHighway(false); });
+    function setDots(on) { prefs.dots = on; savePrefs(); syncView(); }
+    $("dots-show").addEventListener("click", function () { setDots(true); });
+    $("dots-hide").addEventListener("click", function () { setDots(false); });
     syncView();
     document.addEventListener("fullscreenchange", function () {
       $("fullscreen").textContent = document.fullscreenElement ? "Exit full screen" : "Full screen";
@@ -367,7 +399,7 @@
         function () { $("src-message").textContent = "Copy the link above by hand."; });
     });
     $("src-forget").addEventListener("click", function () {
-      Source.writeConfig(null); config = null; files = {};
+      Source.writeConfig(null); config = null; files = {}; $("offline-out").textContent = "";
       if (window.caches) caches.delete("tpr-blobs-v1");
       $("src-repo").value = ""; $("src-token").value = "";
       $("src-message").textContent = "Forgotten. Saved songs were removed from this device.";
@@ -448,7 +480,7 @@
     var look = prefs.look * engine.speed(), scale = fall / look; // same fall speed at any speed: slowed notes grow taller
     var keys = Layout.keys(low, width), byMidi = {};
     keys.forEach(function (k) { byMidi[k.midi] = k; });
-    var lit = {}, next = null;
+    var lit = {}, next = null, touched = touchedBy("midi");
 
     if (parsed) {
       // beat grid: a strong line per bar, a faint one per beat
@@ -484,6 +516,7 @@
 
     // hit line
     if (showFall) { g.fillStyle = "rgba(255,255,255,0.5)"; g.fillRect(0, fall - 2, width, 2); }
+    keyLabel();
 
     // lights only: outline the next key to press, so the hand can get there.
     // Drawn with its own row of keys, so black keys still cover a white outline.
@@ -507,12 +540,35 @@
           rounded(k.x + 1, fall, k.w - 2, h - 2, black ? 4 : 6);
           g.fill(); g.globalAlpha = 1;
         }
+        if (touched[k.midi]) {
+          g.globalAlpha = 0.85; g.fillStyle = COLORS.touch;
+          rounded(k.x + 1, fall, k.w - 2, h - 2, black ? 4 : 6);
+          g.fill(); g.globalAlpha = 1;
+        }
+        if (dotsOn() && Theory.inKey(songKey, k.midi)) {
+          var r = Math.min(k.w * 0.17, 7);
+          dot(k.x + k.w / 2, fall + h - 2 - r * 2.6, r, Theory.isTonic(songKey, k.midi), black ? "rgba(235,240,245,0.85)" : "rgba(40,48,58,0.7)");
+        }
       });
       outlineNext(black);
     });
 
     showTime();
   }
+  /* Notes of the song's key: a small dot, the key note a bigger ringed one. */
+  function dotsOn() { return prefs.dots !== false && !!songKey; }
+  function dot(x, y, r, tonic, color) {
+    g.fillStyle = color; g.strokeStyle = color;
+    g.beginPath(); g.arc(x, y, tonic ? r * 0.75 : r * 0.6, 0, Math.PI * 2); g.fill();
+    if (tonic) { g.lineWidth = Math.max(1.5, r * 0.3); g.beginPath(); g.arc(x, y, r * 1.25, 0, Math.PI * 2); g.stroke(); }
+  }
+  function keyLabel() {
+    if (!dotsOn() || stage().top < 28) return; // lights only: no room above the instrument
+    g.fillStyle = "rgba(220,228,236,0.6)"; g.font = "600 14px system-ui, sans-serif";
+    g.textAlign = "left"; g.textBaseline = "top";
+    g.fillText("Key: " + songKey.name + "  ·  dots = notes that fit", 10, 8);
+  }
+
   function showTime() {
     if (!seeking) $("seek").value = String(engine.position());
     $("time").textContent = clock(engine.position()) + " / " + clock(engine.duration());
@@ -526,14 +582,14 @@
     var lay = stage(), neckHeight = lay.size, fall = lay.top, showFall = lay.highway;
     var t = engine.isPlaying() ? engine.visualPosition(prefs.latencyMs / 1000) : engine.position();
     var look = prefs.look * engine.speed(), scale = fall / look;
-    var col = width / (frets + 1), names = Fret.stringNames(4), count = names.length;
-    var numbers = Math.min(22, neckHeight * 0.14), top = fall + 6, bottom = fall + neckHeight - numbers - 4;
-    var gapY = (bottom - top) / count;
+    var n = neck(lay), col = n.col, names = n.names, count = n.count, numbers = n.numbers;
+    var top = n.top, bottom = n.bottom, gapY = n.gapY, tuning = Fret.tuning(4), touched = touchedBy("string");
     function cx(fret) { return (fret + 0.5) * col; }
     // low string at the top, as the player sees the neck looking down at it
     function sy(string) { return top + gapY * (count - 1 - string + 0.5); }
     var lit = {}, next = null;
 
+    keyLabel();
     // lanes: a faint line per fret, stronger at the nut
     for (var f = 1; showFall && f <= frets; f++) {
       g.fillStyle = f === 1 ? "rgba(255,255,255,0.16)" : "rgba(255,255,255,0.05)";
@@ -581,7 +637,7 @@
     g.fillStyle = "#1a1612";
     g.fillRect(0, fall, col, bottom - fall + 4);
     var mid = (top + bottom) / 2;
-    g.fillStyle = "rgba(240,235,225,0.55)";
+    g.fillStyle = dotsOn() ? "rgba(240,235,225,0.18)" : "rgba(240,235,225,0.55)"; // key dots on: inlays step back
     [3, 5, 7, 9, 15, 17, 19].forEach(function (f) {
       if (f > frets) return;
       g.beginPath(); g.arc(cx(f), mid, Math.min(col, gapY) * 0.14, 0, Math.PI * 2); g.fill();
@@ -602,6 +658,10 @@
       g.font = "700 " + Math.round(Math.min(gapY * 0.55, col * 0.4, 22)) + "px system-ui, sans-serif";
       g.textAlign = "center"; g.textBaseline = "middle";
       g.fillText(names[s], col * 0.28, y);
+      if (dotsOn()) for (f = 0; f <= frets; f++) {
+        if (!Theory.inKey(songKey, tuning[s] + f)) continue;
+        dot(f === 0 ? col * 0.8 : cx(f), y, Math.min(col, gapY) * 0.2, Theory.isTonic(songKey, tuning[s] + f), "#f4f1ea");
+      }
       var on = lit[s];
       if (on) {
         var r = Math.min(col, gapY) * 0.44;
@@ -611,6 +671,14 @@
         g.globalAlpha = 1;
         g.fillStyle = "#0b0f13"; g.font = "700 " + Math.round(r * 1.1) + "px system-ui, sans-serif";
         g.fillText(String(on.fret), cx(on.fret), y + 1);
+      }
+      var mine = touched[s];
+      if (mine) {
+        var tr = Math.min(col, gapY) * 0.44;
+        g.globalAlpha = 0.9; g.fillStyle = COLORS.touch;
+        g.beginPath(); g.arc(cx(mine.fret), y, tr, 0, Math.PI * 2); g.fill(); g.globalAlpha = 1;
+        g.fillStyle = "#0b0f13"; g.font = "700 " + Math.round(tr * 1.1) + "px system-ui, sans-serif";
+        g.textAlign = "center"; g.fillText(String(mine.fret), cx(mine.fret), y + 1);
       }
     }
     // lights only: a dashed ring on the next spot to press
@@ -624,6 +692,67 @@
     showTime();
   }
 
+  function neck(lay) {
+    var names = Fret.stringNames(4), numbers = Math.min(22, lay.size * 0.14);
+    var top = lay.top + 6, bottom = lay.top + lay.size - numbers - 4;
+    return { col: width / (frets + 1), names: names, count: names.length, numbers: numbers, top: top, bottom: bottom, gapY: (bottom - top) / names.length };
+  }
+
+  /* ---------- playing by touch ---------- */
+  /* What a finger at (x, y) presses: a key, or a string at a fret. Black keys
+   * win over the white key under them. Above the instrument: nothing. */
+  function hitAt(x, y) {
+    var lay = stage();
+    if (y < lay.top || y > lay.top + lay.size) return null;
+    if (prefs.view === "bass") {
+      var n = neck(lay), fret = Math.floor(x / n.col);
+      if (y > n.bottom + 4 || fret < 0 || fret > frets) return null;
+      var row = Math.max(0, Math.min(n.count - 1, Math.floor((y - n.top) / n.gapY)));
+      var string = n.count - 1 - row;
+      return { midi: Fret.tuning(4)[string] + fret, string: string, fret: fret };
+    }
+    var keys = Layout.keys(low, width), onBlack = y < lay.top + lay.size * 0.62, i;
+    for (i = 0; onBlack && i < keys.length; i++) if (keys[i].black && x >= keys[i].x && x < keys[i].x + keys[i].w) return { midi: keys[i].midi };
+    for (i = 0; i < keys.length; i++) if (!keys[i].black && x >= keys[i].x && x < keys[i].x + keys[i].w) return { midi: keys[i].midi };
+    return null;
+  }
+  var held = {}; // pointer id -> { hit, release }
+  function touchedBy(field) {
+    var out = {};
+    Object.keys(held).forEach(function (id) { var hit = held[id].hit; if (hit) out[hit[field]] = hit; });
+    return out;
+  }
+  function pointAt(event) {
+    var box = canvas.getBoundingClientRect();
+    return hitAt(event.clientX - box.left, event.clientY - box.top);
+  }
+  function sound(id, hit) {
+    var was = held[id];
+    if (was && was.hit && hit && was.hit.midi === hit.midi && was.hit.string === hit.string) return;
+    if (was && was.release) was.release();
+    held[id] = { hit: hit, release: hit ? engine.press(hit.midi) : null };
+  }
+  function lift(event) {
+    var was = held[event.pointerId];
+    if (was && was.release) was.release();
+    delete held[event.pointerId];
+  }
+  function bindTouch() {
+    canvas.addEventListener("pointerdown", function (event) {
+      var hit = pointAt(event);
+      if (!hit) return;
+      event.preventDefault();
+      try { canvas.setPointerCapture(event.pointerId); } catch (_) { /* old browser: up still arrives on the canvas */ }
+      sound(event.pointerId, hit);
+    });
+    // sliding a finger plays the keys or frets it crosses
+    canvas.addEventListener("pointermove", function (event) {
+      if (held[event.pointerId]) sound(event.pointerId, pointAt(event));
+    });
+    ["pointerup", "pointercancel", "lostpointercapture"].forEach(function (name) { canvas.addEventListener(name, lift); });
+    canvas.addEventListener("contextmenu", function (event) { event.preventDefault(); });
+  }
+
   /* ---------- start ---------- */
   function start() {
     var found = Source.extractCode(location.href), linkError = null;
@@ -634,6 +763,7 @@
       history.replaceState(null, "", found.cleaned); // keep the token out of the address bar and history
     }
     bind();
+    bindTouch();
     resize();
     window.addEventListener("resize", resize);
     if (window.ResizeObserver) new ResizeObserver(resize).observe(canvas);

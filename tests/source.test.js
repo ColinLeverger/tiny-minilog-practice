@@ -80,3 +80,34 @@ test("songs.json can give a tempo and marker notes to drop", () => {
   assert.strictEqual(song.bpm, 128);
   assert.deepStrictEqual(song.ignoreNotes, [64, 66]);
 });
+
+test("the whole library is saved for offline use, skipping files already on the device", async () => {
+  const fetched = [], store = new Map([["./__blob/sha-a-mid", new Response("x")]]);
+  globalThis.caches = { open: async () => ({
+    match: async (key) => store.get(key),
+    put: async (key, response) => { store.set(key, response); }
+  }) };
+  globalThis.fetch = async (url) => { fetched.push(url.split("/contents/")[1].split("?")[0]); return new Response("y"); };
+  try {
+    const files = { "a/bass.mid": "sha-a-mid", "a/nobass.mp3": "sha-a-back", "b/bass.mid": "sha-b-mid", "b/full.mp3": "sha-b-full" };
+    const songs = [
+      { midi: "a/bass.mid", backing: "a/nobass.mp3", full: null },
+      { midi: "b/bass.mid", backing: null, full: "b/full.mp3" },
+      { midi: "a/bass.mid", backing: null, full: null } // same file twice is fetched once
+    ];
+    const seen = [];
+    const state = await Source.preload(config, files, songs, (s) => seen.push(s.done));
+    assert.deepStrictEqual(state, { done: 4, total: 4, failed: 0 });
+    assert.deepStrictEqual(fetched, ["a/nobass.mp3", "b/bass.mid", "b/full.mp3"], "cached file must not be downloaded again");
+    assert.deepStrictEqual(seen, [1, 2, 3, 4]);
+  } finally { delete globalThis.caches; delete globalThis.fetch; }
+});
+
+test("saving the library stops at the first sign of no network", async () => {
+  globalThis.fetch = async () => { throw new TypeError("Failed to fetch"); };
+  try {
+    const files = { "a.mid": "1", "b.mid": "2", "c.mid": "3" };
+    const state = await Source.preload(config, files, [{ midi: "a.mid" }, { midi: "b.mid" }, { midi: "c.mid" }]);
+    assert.deepStrictEqual(state, { done: 0, total: 3, failed: 1 });
+  } finally { delete globalThis.fetch; }
+});
