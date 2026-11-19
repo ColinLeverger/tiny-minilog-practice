@@ -50,7 +50,7 @@ GitHub repository and are read with a read-only token carried in the link.
   songs.json overrides it when it guesses wrong. The key's
   name shows in Settings and at the top of the picture.
 - **A / B / Loop off**: repeat a passage. **−5 s** and **Start** to go back.
-- **Settings**: volumes, moving the notes one octave left or right, how far
+- **Settings**: volumes, moving the line one octave lower or higher, how far
   ahead notes show, full screen, and timing (for Bluetooth headphones). Loading
   files and the song library sit folded under *Setup (adding songs)*.
 
@@ -136,8 +136,9 @@ code sits in the fragment because a fragment is never sent to a server;
 The app chooses the two octaves (E to E) that hold the most notes and puts the
 lowest ones at the left. Which octave *sounds* right depends on the synth's OCTAVE
 switch and on the patch, so set those by ear against the "With bass" recording.
-*Settings → Notes left / Notes right* shifts the picture when the line is
-more comfortable an octave to the right.
+*Settings → Screen → Octave: − Lower / Higher +* moves the line one octave on
+the picture (keyboard or neck), per song, when it is more comfortable an
+octave higher or lower. What you hear does not change.
 
 ## Development
 

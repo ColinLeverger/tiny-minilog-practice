@@ -53,8 +53,10 @@
     "Dots on the notes of the key": "Points sur les notes de la tonalité",
     "Key dots": "Avec points",
     "No dots": "Sans points",
-    "◀ Notes left": "◀ Notes à gauche",
-    "Notes right ▶": "Notes à droite ▶",
+    "− Lower": "− Plus grave",
+    "Higher +": "Plus aigu +",
+    "Plays the line one octave lower or higher on the picture. The sound does not change.":
+      "Place la ligne une octave plus grave ou plus aiguë sur l’image. Le son ne change pas.",
     "Notes visible ahead": "Notes visibles à l’avance",
     "Timing": "Synchro",
     "Keys light up before you hear the note? Move right.": "Les touches s’allument avant d’entendre la note ? Glissez à droite.",

@@ -89,6 +89,7 @@ legend { color: var(--text); padding: 0 6px; font-weight: 600; }
 .row input[type="range"] { width: 0; }
 output { min-width: 56px; color: var(--text); font-variant-numeric: tabular-nums; }
 #shift-out { min-width: 24px; text-align: center; }
+#shift-label { color: var(--text); }
 #shift-down, #shift-up { padding: 0 8px; font-size: 15px; flex: 1; }
 #install-help, .setup, .sheet-body > fieldset:nth-child(3) { grid-column: 1 / -1; }
 #install-help p { margin: 0; }

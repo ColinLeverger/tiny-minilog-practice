@@ -86,11 +86,13 @@
             <button type="button" id="dots-hide">No dots</button>
           </div>
           <p id="key-out" class="hint"></p>
-          <div class="row">
-            <button type="button" id="shift-down">◀ Notes left</button>
+          <div class="row" role="group" aria-labelledby="shift-label">
+            <span id="shift-label">Octave</span>
+            <button type="button" id="shift-down">− Lower</button>
             <output id="shift-out"></output>
-            <button type="button" id="shift-up">Notes right ▶</button>
+            <button type="button" id="shift-up">Higher +</button>
           </div>
+          <p class="hint">Plays the line one octave lower or higher on the picture. The sound does not change.</p>
           <label id="look-row">Notes visible ahead
             <span class="row"><input type="range" id="look" min="1.5" max="6" step="0.5"><output id="look-out"></output></span>
           </label>
